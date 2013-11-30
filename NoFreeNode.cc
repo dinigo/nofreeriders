@@ -58,10 +58,12 @@ NoFreeNode::initialize()
     reputationTimeout = par("reputationTiemout");
     reputationRequestTimeout = par("reputationRequestTimeout");
     fileRequestTimeout = par("fileRequestTimeout");
+    downloadFileTiemout = par("downloadFileTiemout");
     kindness = par("kindness");
     // Instancia los timer con un mensaje descriptivo.
     reputationRequestTimer = new cMessage("reputationRequestTiemout");
     fileRequestTimer = new cMessage("fileRequestTiemout");
+    downloadFiletTimer = new cMessage("downloadFileTiemout");
 }
 
 NoFreeNode::fileRequest()

@@ -42,7 +42,7 @@
 class NoFreeNode : public cSimpleModule
 {
 protected:
-    int timeTillFileRequest             // Tiempo hasta que se realize petición
+    int downloadFileTiemout;             // Tiempo hasta que se realize petición
     int reputationTimeout;              // Tiempo de validez de la reputación.
     int reputationRequestTimeout;       // Tiempo que se esperan msg tipo R.
     int fileRequestTimeout;             // Tiempo que se espera a que se sirva
@@ -53,6 +53,7 @@ protected:
                                         // Funciona con reputationRequestTiemout.
     cMessage *fileRequestTimer;         // Timer para esperar a que me sirvan un archivo.
                                         // Funciona con fileRequestTimeout.
+    cMessage *downloadFileTimer;        // Timer para encolar nuevas peticiones de archivo.
 
     // Clase muy básica para almacenar datos de cada nodo.
     struct PeerReputation {
@@ -136,7 +137,7 @@ public:
      * Petición de reputación: al principio se hará empleando el array de nodos
      * directamente y buscando pero luego se usará un algoritmo de flooding.
      */
-    virtual void petitionRequest ( int nodeId );
+    virtual void reputationRequest ( int nodeId );
 
     /**
      * Graba estadísticas y logs.
