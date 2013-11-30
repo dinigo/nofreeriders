@@ -35,12 +35,14 @@ package nofreeriders;
 simple NoFreeNode
 {
     parameters:
-        int reputationTimeout = default(30);
-        int reputationRequestTimeout = default(1);
-        int fileRequestTimeout = default(2);
+        double reputationTimeout = default(30);
+        double reputationRequestTimeout = default(1);
+        double fileRequestTimeout = default(2);
+        double downloadFileTiemout
         double kindness = default(0.8);
         double timeTillFileRequest = default(uniform(1,50));
-        
+
+        @display("i=old/bwcomp;is=n");
     gates:
         inout dataGate[];     // Para FileRequest y File
         inout controlGate[];  // Para ReputationRequest y Reputation
@@ -49,15 +51,15 @@ simple NoFreeNode
 // ------------------ CHANNELS ------------------//
 channel DataChannel extends ned.DatarateChannel
 {
-        datarate = 5Mbps;
-        delay = 100us;
-        @display("ls=blue,2,da");
+    datarate = 5Mbps;
+    delay = 100us;
+    @display("ls=blue,2,da");
 }
 
 channel ControlChannel
 {
-        // TODO: añadir delay para simular la lectura de bases de datos procesos.
-        @display("ls=green,2,da");
+    // TODO: añadir delay para simular la lectura de bases de datos procesos.
+    @display("ls=green,2,da");
 }
 
 
@@ -67,18 +69,17 @@ network MyNetwork
     parameters:
         int numNodes = default(10);         // Numero de nodos tipo NoFreeNode
         int connectivity = default(0.5);    // probabilidad de conectar con otro
-        @display("i=block/network");
-        
+        @display("i=block/network2");
+
     submodules:
-        noFreeNode[numNodes] : NoFreeNode;
-        
+        noFreeNode[numNodes]: NoFreeNode;
     connections:
         // Hace las conexiones de datos aleatoriamente
-        for i=1..numNodes-1, for j=0..i, if(uniform(0,1)>connectivity){
+        for i=1..numNodes-1, for j=0..i, if (uniform(0,1)>connectivity) {
             noFreeNode[i].dataGate++ <--> DataChannel <--> noFreeNode[j].dataGate++;
         }
-        // Hace un frafo completo para las conexiones de control.
-        for i=1..numNodes-1, for j=0..i{
+        // Hace un grafo completo para las conexiones de control.
+        for i=1..numNodes-1, for j=0..i {
             noFreeNode[i].controlGate++ <--> ControlChannel <--> noFreeNode[j].controlGate++;
         }
 }
