@@ -42,6 +42,7 @@
 class NoFreeNode : public cSimpleModule
 {
 protected:
+    int timeTillFileRequest             // Tiempo hasta que se realize petición
     int reputationTimeout;              // Tiempo de validez de la reputación.
     int reputationRequestTimeout;       // Tiempo que se esperan msg tipo R.
     int fileRequestTimeout;             // Tiempo que se espera a que se sirva
@@ -78,9 +79,10 @@ public:
     ~NoFreeNode ();
 
     /**
-     * Inicialización de la aplicación (bootstrap)
+     * Inicialización de la aplicación (bootstrap). Se ponen en marcha los
+     * eventos que dan lugar a la simulación
      */
-    virtual void initializeApp ();
+    virtual void initialize ();
 
     /**
      * Recibe un mensaje, mira del tipo que es (RR, FR, R o selfmessage) y
