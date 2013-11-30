@@ -35,11 +35,11 @@ package nofreeriders;
 simple NoFreeNode
 {
     parameters:
-        double reputationTimeout = default(30);
+        double reputationTimeout = default(30.0);
         double reputationRequestTimeout = default(1);
-        double fileRequestTimeout = default(2);
-        double downloadFileTiemout
-        double kindness = default(0.8);
+        double fileRequestTimeout = default(0.5);
+        double downloadFileTiemout = default(0.1);
+        double kindness = default(uniform(0.5,0.9));
         double timeTillFileRequest = default(uniform(1,50));
 
         @display("i=old/bwcomp;is=n");
