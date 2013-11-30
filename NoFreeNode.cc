@@ -31,7 +31,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <map.h>
 #include <omnetpp.h>
 
 #include "NoFreeNode.h"
@@ -39,3 +38,51 @@
 
 // Declara el módulo para que pueda usarse en el archivo de topología
 Define_Module(NoFree);
+
+
+
+NoFreeNode::NoFreeNode()
+{
+
+}
+
+NoFreeNode::~NoFreeNode()
+{
+    cancelAndDelete(reputationRequestTimer);
+    cancelAndDelete(fileRequestTimer);
+}
+
+NoFreeNode::initialize()
+{
+    // Lee los valores de las variables desde el archivo de topología.
+    reputationTimeout = par("reputationTiemout");
+    reputationRequestTimeout = par("reputationRequestTimeout");
+    fileRequestTimeout = par("fileRequestTimeout");
+    kindness = par("kindness");
+    // Instancia los timer con un mensaje descriptivo.
+    reputationRequestTimer = new cMessage("reputationRequestTiemout");
+    fileRequestTimer = new cMessage("fileRequestTiemout");
+}
+
+NoFreeNode::fileRequest()
+{
+    // Lee el tiempo hasta la próxima petición por parámetro para que se llame
+    // a la función aleatoria de cada vez. De esta forma cada vez que se invoca
+    // `timeTillFileRequest` tiene un valor diferente.
+    timeTillFileRequest = &par("timeTillFileRequest");
+    scheduleAt(simTime()+timeTillFileRequest, msg);
+}
+
+NoFreeNode::handleTimerEvent( cMessage *msg )
+{
+    // Es hora de descargarse un archivo de alguien.
+    if(msg == fileRequestTimer){
+        // Elijo a la persona de entre los conectados a mi
+        int n = gateSize("gate$o");
+        int k = intuniform(0,n-1);
+        // Le envío una petición
+        FileRequest *frmsg = new FileRequest("fileRequest");
+        frmsg->setSourceNodeId();
+        frmsg->setDestinationNodeId();
+    }
+}
