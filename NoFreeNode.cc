@@ -90,7 +90,7 @@ void NoFreeNode::fileRequest()
     // Le envío una petición.
     send(frmsg, "dataGate$o", k);
     // Si no tengo reputación del nodo al que pido, la creo.
-    if(nodeMap.find(nodeRequested) == nodeMap.end){
+    if(nodeMap.find(nodeRequested) == nodeMap.end()){
         nodeMap[nodeRequested].totalRequest    = 0;
         nodeMap[nodeRequested].acceptedRequest = 0;
     }
@@ -162,12 +162,13 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     nodeServed = msg->getSourceNodeId();
     nodeServedGate = msg->getArrivalGate()->getIndex();
     // Si ya tenemos almacenada reputación de este nodo la usamos.
-    if(nodeMap.find(nodeServed) != nodeMap.end){
+    if(nodeMap.find(nodeServed) != nodeMap.end()){
         tempReputation = nodeMap[nodeServed];
     }
     // Si no se borra la que se tenía, que sería de otro nodo.
     else{
-        tempReputation = new PeerReputation();
+        tempReputation.totalRequest    = 0;
+        tempReputation.acceptedRequest = 0;
     }
     // Crea un mensaje ReputationRequest para el nodo que pide.
     ReputationRequest *rrmsg = new ReputationRequest("ReputationRequest");
@@ -175,7 +176,7 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     rrmsg->setTargetNodeId(nodeServed);
     // Reenvía copias del ReputationRequest por todas las salidas.
     for(int i=0; i<gateSize("controlGate$o"); i++){
-        send(rrmsg->dup());
+        send(rrmsg->dup(),"controlGate$o", i);
     }
     // Borra el mensaje.
     cancelAndDelete(msg);
@@ -196,12 +197,12 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 {
     // Si ya tenemos reputación de este nodo la enviamos.
     int targetNode = msg->getTargetNodeId();
-    if(nodeMap.find(targetNode) != nodeMap.end){
+    if(nodeMap.find(targetNode) != nodeMap.end()){
         // Crea un mensaje.
         Reputation *rmsg = new Reputation("Reputation");
         rmsg->setTargetNodeId(msg->getTargetNodeId());
         rmsg->setSourceNodeId(getIndex());
-        rmsg->setDefaultOwner(msg->getSourceNodeId());
+        rmsg->setDestinationNodeId(msg->getSourceNodeId());
         rmsg->setTotalRequests(nodeMap[targetNode].totalRequest);
         rmsg->setAcceptedRequests(nodeMap[targetNode].acceptedRequest);
         // La reenvía por la puerta que llegó.

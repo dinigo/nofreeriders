@@ -45,8 +45,6 @@ class NoFreeNode : public cSimpleModule
 protected:
     /** Clase muy básica para almacenar la reputación */
     struct PeerReputation {
-        // Constructor que inicializa a 0 los dos contadores de peticiones.
-        PeerReputation(int a=0, int t=0) : acceptedRequest(a), totalRequest(t) {}
         /** Operador asignación, para poder poner `PeerReputation a = b`. */
         PeerReputation operator = (PeerReputation a)
         {
