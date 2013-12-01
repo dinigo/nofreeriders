@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <map>
+#include <set>
 #include <omnetpp.h>
 
 #include "NoFreeMessage_m.h"
@@ -42,16 +43,18 @@
 class NoFreeNode : public cSimpleModule
 {
 protected:
-    // Clase muy básica para almacenar datos de cada nodo.
+    /** Clase muy básica para almacenar la reputación */
     struct PeerReputation {
+        // Constructor que inicializa a 0 los dos contadores de peticiones.
         PeerReputation() : acceptedRequest(0), totalRequests(0) {}
-        double lastUpdate;
-        int acceptedRequest;
-        int totalRequest;
+        int acceptedRequest;    // Peticiones aceptadas.
+        int totalRequest;       // Peticiones aceptadas.
     };
     PeerReputation tempReputation;      // Almacena temporalmente la reputación
                                         // de un nodo para decidir si servirle o no
     int nodeRequested;                  // Nodo al que se ha pedido el archivo
+    int nodeServed;                     // Nodo al que se va a enviar el archivo
+    std::set <int> nodeContributed;     // Lista de nodos que han aportado su reputación.
     int downloadFileTiemout;            // Tiempo hasta que se realize petición
     int reputationTimeout;              // Tiempo de validez de la reputación.
     int reputationRequestTimeout;       // Tiempo que se esperan msg tipo R.
