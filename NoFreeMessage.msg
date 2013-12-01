@@ -42,23 +42,21 @@ enum MessageType
 // Paquete básico al que hacer casting para sacar el tipo.
 packet NoFreeMessage
 {
-    unsigned int messageTipe @enum(MessageType);
+    unsigned int messageTipe @enum(MessageType);    // Tipo de paquete.
+    int sourceNodeId;           // Índice del nodo que envía el paquete.
+    int destinationNodeId;      // Índice del nodo a quien se envía el paquete.
 }
 
 // Petición de archivo.
 packet FileRequest extends NoFreeMessage
 {
     messageTipe @enum(MessageType) = FILE_REQUEST;
-    int sourceNodeId;
-    int destinationNodeId;
 }
 
 // Petición de reputación.
 packet ReputationRequest extends NoFreeMessage
 {
     messageTipe @enum(MessageType) = REPUTATION_REQUEST;
-    int sourceNodeId;       // Quien pregunta.
-    int destinationNodeId;  // A quién pregunta.
     int targetNodeId;       // Por qué nodo pregunta.
 }
 
@@ -66,8 +64,6 @@ packet ReputationRequest extends NoFreeMessage
 packet File extends NoFreeMessage
 {
     messageTipe @enum(MessageType) = FILE;
-    int sourceNodeId;       // Quién envía el archivo.
-    int destinationNodeId;  // A quién se lo manda.
 }
 
 // Datos de la reputación de un nodo.
@@ -77,6 +73,4 @@ packet Reputation extends NoFreeMessage
     int targetNodeId;       // De quién son los datos de reputación.
     int totalRequests;
     int acceptedRequests;
-    double lastUpdate;      // la fecha de ultima actualización en double
-                             // se puede convertir con `SIMTIME_DBL(simtime_t)` 
 }
