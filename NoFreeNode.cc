@@ -62,18 +62,18 @@ void NoFreeNode::initialize()
     nodeRequested = -1;
     nodeServed    = -1;
     // Lee los valores de las variables desde el archivo de topología.
-    reputationTimeout       = par("reputationTiemout");
+    reputationTimeout       = par("reputationTimeout");
     reputationRequestTimeout= par("reputationRequestTimeout");
     fileRequestTimeout      = par("fileRequestTimeout");
-    downloadFileTiemout     = par("downloadFileTiemout");
+    downloadFileTimeout     = par("downloadFileTimeout");
     kindness                = par("kindness");
     // Instancia los timer con un mensaje descriptivo.
-    reputationRequestTimer  = new cMessage("reputationRequestTiemout");
-    fileRequestTimer        = new cMessage("fileRequestTiemout");
-    downloadFileTimer       = new cMessage("downloadFileTiemout");
-    // Encolo la primera descarga dentro de un tiempo "downloadFileTiemout".
-    downloadFileTiemout     = par("downloadFileTiemout");
-    scheduleAt(simTime()+downloadFileTiemout, downloadFileTimer);
+    reputationRequestTimer  = new cMessage("reputationRequestTimer");
+    fileRequestTimer        = new cMessage("fileRequestTimer");
+    downloadFileTimer       = new cMessage("downloadFileTimer");
+    // Encolo la primera descarga dentro de un tiempo "downloadFileTimeout".
+    downloadFileTimeout     = par("downloadFileTimeout");
+    scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
 }
 
 void NoFreeNode::fileRequest()
@@ -99,8 +99,8 @@ void NoFreeNode::fileRequest()
     nodeMap[nodeRequested].totalRequest++;
     nodeMap[nodeRequested].acceptedRequest++;
     // Encolo un nuevo evento dentro de un tiempo aleatorio.
-    downloadFileTiemout = par("downloadFileTiemout");
-    scheduleAt(simTime()+downloadFileTiemout, downloadFileTimer);
+    downloadFileTimeout = par("downloadFileTimeout");
+    scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
 }
 
 void NoFreeNode::handleTimerEvent( cMessage *msg )
@@ -124,32 +124,37 @@ void NoFreeNode::handleTimerEvent( cMessage *msg )
 
 void NoFreeNode::handleMessage( cMessage *msg )
 {
-    // Se hace cast al tipo de mensaje que heredan todos los demás
-    NoFreeMessage *auxmsg = check_and_cast<NoFreeMessage *>(msg);
-    // Según su tipo se hace casting al tipo adecuado y se pasa a la función.
-    switch(auxmsg->getMessageTipe()){
-        case FILE_REQUEST:
-        {
-            FileRequest *auxmsg = check_and_cast<FileRequest *>(msg);
-            handleFileRequest(auxmsg);
-            break;
-        }
-        case REPUTATION_REQUEST:
-        {
-            ReputationRequest *auxmsg = check_and_cast<ReputationRequest *>(msg);
-            handleReputationRequest(auxmsg);
-            break;
-        }
-        case FILE_RESPONSE:
-        {
-            File *auxmsg = check_and_cast<File *>(msg);
-            handleFileResponse(auxmsg);
-            break;
-        }
-        case REPUTATION_RESPONSE:
-        {
-            Reputation *auxmsg = check_and_cast<Reputation *>(msg);
-            handleReputationResponse(auxmsg);
+    if(msg->isSelfMessage()){
+        handleTimerEvent(msg);
+    }
+    else{
+        // Se hace cast al tipo de mensaje que heredan todos los demás
+        NoFreeMessage *auxmsg = check_and_cast<NoFreeMessage *>(msg);
+        // Según su tipo se hace casting al tipo adecuado y se pasa a la función.
+        switch(auxmsg->getMessageTipe()){
+            case FILE_REQUEST:
+            {
+                FileRequest *auxmsg = check_and_cast<FileRequest *>(msg);
+                handleFileRequest(auxmsg);
+                break;
+            }
+            case REPUTATION_REQUEST:
+            {
+                ReputationRequest *auxmsg = check_and_cast<ReputationRequest *>(msg);
+                handleReputationRequest(auxmsg);
+                break;
+            }
+            case FILE_RESPONSE:
+            {
+                File *auxmsg = check_and_cast<File *>(msg);
+                handleFileResponse(auxmsg);
+                break;
+            }
+            case REPUTATION_RESPONSE:
+            {
+                Reputation *auxmsg = check_and_cast<Reputation *>(msg);
+                handleReputationResponse(auxmsg);
+            }
         }
     }
 }

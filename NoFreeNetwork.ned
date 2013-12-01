@@ -39,9 +39,8 @@ simple NoFreeNode
         double reputationTimeout = default(30.0);
         double reputationRequestTimeout = default(1);
         double fileRequestTimeout = default(0.5);
-        double downloadFileTiemout = default(0.1);
+        double downloadFileTimeout = default(0.1);
         double kindness = default(uniform(0.5,0.9));
-
         @display("i=old/bwcomp;is=n");
     gates:
         inout dataGate[];     // Para FileRequest y File
@@ -52,14 +51,13 @@ simple NoFreeNode
 channel DataChannel extends ned.DatarateChannel
 {
     datarate = 5Mbps;
-    delay = 100us;
-    @display("ls=blue,2,da");
+    delay = 1ms;
+    @display("ls=blue,2,s");
 }
 
-channel ControlChannel
-{
-    // TODO: añadir delay para simular la lectura de bases de datos procesos.
-    @display("ls=green,2,da");
+channel ControlChannel extends ned.DelayChannel {
+    delay = 1ms;
+    @display("ls=green,1,da");            
 }
 
 
@@ -75,11 +73,11 @@ network MyNetwork
         noFreeNode[numNodes]: NoFreeNode;
     connections:
         // Hace las conexiones de datos aleatoriamente
-        for i=1..numNodes-1, for j=0..i, if (uniform(0,1)>connectivity) {
+        for i=1..numNodes-1, for j=0..i-1, if (uniform(0,1)>connectivity) {
             noFreeNode[i].dataGate++ <--> DataChannel <--> noFreeNode[j].dataGate++;
         }
         // Hace un grafo completo para las conexiones de control.
-        for i=1..numNodes-1, for j=0..i {
+        for i=1..numNodes-1, for j=0..i-1 {
             noFreeNode[i].controlGate++ <--> ControlChannel <--> noFreeNode[j].controlGate++;
         }
 }

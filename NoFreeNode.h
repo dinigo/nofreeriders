@@ -58,19 +58,19 @@ protected:
     PeerReputation tempReputation;      // Almacena temporalmente la reputación
                                         // de un nodo para decidir si servirle o no.
     double requiredShareRate;          // Ratio necesario de reputación para compartir (p.ej: 0.8);
-    int nodeRequested;                  // Nodo al que se ha pedido el archivo.
-    int nodeServed;                     // Nodo al que se va a enviar el archivo.
-    int nodeServedGate;                 // Id de la puerta por la que servir el archivo.
-    std::set <int> nodeContributed;     // Lista de nodos que han aportado su reputación.
-    int downloadFileTiemout;            // Tiempo hasta que se realize petición
-    int reputationTimeout;              // Tiempo de validez de la reputación.
-    int reputationRequestTimeout;       // Tiempo que se esperan msg tipo R.
-    int fileRequestTimeout;             // Tiempo que se espera a que se sirva
+    int nodeRequested;                 // Nodo al que se ha pedido el archivo.
+    int nodeServed;                    // Nodo al que se va a enviar el archivo.
+    int nodeServedGate;                // Id de la puerta por la que servir el archivo.
+    std::set <int> nodeContributed;    // Lista de nodos que han aportado su reputación.
+    double downloadFileTimeout;        // Tiempo hasta que se realize petición
+    double reputationTimeout;          // Tiempo de validez de la reputación.
+    double reputationRequestTimeout;   // Tiempo que se esperan msg tipo R.
+    double fileRequestTimeout;         // Tiempo que se espera a que se sirva
                                         // un archivo (después se considera al servidor un freerider)
     double kindness;                   // Probabilidad de enviar el archivo
                                         // <0.8 freerider, >0.8 buen peer.
     cMessage *reputationRequestTimer;   // Timer para esperar mensajes de reputación.
-                                        // Funciona con reputationRequestTiemout.
+                                        // Funciona con reputationRequestTimeout.
     cMessage *fileRequestTimer;         // Timer para esperar a que me sirvan un archivo.
                                         // Funciona con fileRequestTimeout.
     cMessage *downloadFileTimer;        // Timer para encolar nuevas peticiones de archivo.
