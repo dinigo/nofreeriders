@@ -42,7 +42,10 @@
 class NoFreeNode : public cSimpleModule
 {
 protected:
-    int downloadFileTiemout;             // Tiempo hasta que se realize petición
+    PeerReputation *tempReputation;     // Almacena temporalmente la reputación
+                                        // de un nodo para decidir si servirle o no
+    int nodeRequested;                  // Nodo al que se ha pedido el archivo
+    int downloadFileTiemout;            // Tiempo hasta que se realize petición
     int reputationTimeout;              // Tiempo de validez de la reputación.
     int reputationRequestTimeout;       // Tiempo que se esperan msg tipo R.
     int fileRequestTimeout;             // Tiempo que se espera a que se sirva
@@ -57,25 +60,26 @@ protected:
 
     // Clase muy básica para almacenar datos de cada nodo.
     struct PeerReputation {
-        simtime_t lastUpdate;
+        PeerReputation() : acceptedRequest(0), totalRequests(0) {}
+        double lastUpdate;
         int acceptedRequest;
-        int totalRequests;
+        int totalRequest;
     };
 
     // Lista de nodos adyacentes y su reputación.
-    std::map <int, PeerStatistics> peerMap;
+    std::map <int, PeerStatistics> nodeMap;
+
 
 public:
     /**
-     * Constructor por defecto. Instancia los message y obtiene los parámetros
-     * del archivo de topología.
+     * Constructor por defecto.
      */
     NoFreeNode ();
 
     /**
-     * Elimina los selfmessage para que no queden por ahí ejecutándose
-     * deattached de forma que consuman memoria pero no puedan borrarse.
-     * (imporante para redes grandes).
+     * Cancela y Elimina los selfmessage que se usaban como timer para que no
+     * queden por ahí ejecutándose deattached de forma que consuman memoria pero
+     * no puedan borrarse (imporante para redes grandes).
      */
     ~NoFreeNode ();
 
@@ -104,26 +108,26 @@ public:
      *      trabajar con mapas en c++:
      *      http://www.yolinux.com/TUTORIALS/CppStlMultiMap.html
      */
-    virtual void handleFileRequest  ( cMessage *msg );
+    virtual void handleFileRequest  ( FileRequest *msg );
 
     /**
      * Recibe el archivo que había pedido así que incrementa 1 el contador de
      * "acceptedRequests".
      */
-    virtual void handleFileResponse ( cMessage *msg );
+    virtual void handleFileResponse ( File *msg );
 
     /**
      * Recibe una petición de reputación para un nodo. Mira si lo tiene, si no
      * lo tiene reenvía el mensaje (actualmente no se usa).
      */
-    virtual void handleReputationRequest ( cMessage *msg );
+    virtual void handleReputationRequest ( ReputationRequest *msg );
 
     /**
      * Recibe la reputación que había pedido y decide si servir o no el archivo
      * en función de lo que haya recibido y de un parámetro de "kindness"
      * decide enviar el archivo o no.
      */
-    virtual void handleReputationResponse ( cMessage *msg );
+    virtual void handleReputationResponse ( Reputation *msg );
 
     /**
      * Transcurrido un tiempo aleatorio pide un archivo a otro nodo.
