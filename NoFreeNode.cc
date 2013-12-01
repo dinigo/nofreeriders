@@ -83,12 +83,12 @@ void NoFreeNode::fileRequest()
     int k = intuniform(0,n-1);
     // Construyo un paquete.
     FileRequest *frmsg = new FileRequest("fileRequest");
-    // Si la siguiente linea no está bien descomentar esta: gate("dataGate$o", n)->getChannel()->getSourceGate()->getOwnerModule()->getIndex();
-    nodeRequested = gate("dataGate$o", n)->getNextGate()->getOwnerModule()->getIndex();
+    nodeRequested = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getIndex();
     frmsg->setSourceNodeId(getIndex());
     frmsg->setDestinationNodeId(n);
     // Le envío una petición.
     send(frmsg, "dataGate$o", k);
+    EV<<"Nodo["<<getIndex()<<"]:    FileRequest->Nodo["<<nodeRequested<<"]"<<endl;
     // Si no tengo reputación del nodo al que pido, la creo.
     if(nodeMap.find(nodeRequested) == nodeMap.end()){
         nodeMap[nodeRequested].totalRequest    = 0;
@@ -161,6 +161,8 @@ void NoFreeNode::handleMessage( cMessage *msg )
 
 void NoFreeNode::handleFileRequest( FileRequest *msg )
 {
+    // Si ya estamos sirviendo a otro nodo salimos, que aún no sabemos encolar eventos.
+    if(nodeServed != -1) return;
     // Borra la lista de nodos de los que se ha recibido reputación.
     nodeContributed.clear();
     // Mira a quién estamos sirviendo.
