@@ -31,6 +31,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <map>
+#include <set>
 #include <omnetpp.h>
 
 #include "NoFreeNode.h"
@@ -89,14 +91,15 @@ void NoFreeNode::fileRequest()
     send(frmsg, "dataGate$o", k);
     // Si no tengo reputación del nodo al que pido, la creo.
     if(nodeMap.find(nodeRequested) == nodeMap.end){
-        nodeMap[nodeRequested] = new PeerReputation();
+        nodeMap[nodeRequested].totalRequest    = 0;
+        nodeMap[nodeRequested].acceptedRequest = 0;
     }
     // Considero que es un buen par y le subo la reputación para que no le
     // perjudique si alguien me la pide mientras tanto.
     nodeMap[nodeRequested].totalRequest++;
     nodeMap[nodeRequested].acceptedRequest++;
     // Encolo un nuevo evento dentro de un tiempo aleatorio.
-    downloadFileTiemout = &par("downloadFileTiemout");
+    downloadFileTiemout = par("downloadFileTiemout");
     scheduleAt(simTime()+downloadFileTiemout, downloadFileTimer);
 }
 
@@ -122,24 +125,32 @@ void NoFreeNode::handleTimerEvent( cMessage *msg )
 void NoFreeNode::handleMessage( cMessage *msg )
 {
     // Se hace cast al tipo de mensaje que heredan todos los demás
-    NoFreeMessage *nfmsg = check_and_cast<NoFreeMessage *>(msg);
+    NoFreeMessage *auxmsg = check_and_cast<NoFreeMessage *>(msg);
     // Según su tipo se hace casting al tipo adecuado y se pasa a la función.
-    switch(nfmsg->getMessageTipe()){
-    case FILE_REQUEST:
-        FileRequest *auxmsg = check_and_cast<FileRequest *>(msg);
-        handleFileRequest(auxmsg);
-        break;
-    case REPUTATION_REQUEST:
-        ReputationRequest *auxmsg = check_and_cast<ReputationRequest *>(msg);
-        handleReputationRequest(auxmsg);
-        break;
-    case FILE:
-        File *auxmsg = check_and_cast<File *>(msg);
-        handleFileResponse(auxmsg);
-        break;
-    case REPUTATION:
-        Reputation *auxmsg = check_and_cast<Reputation *>(msg);
-        handleReputationResponse(auxmsg);
+    switch(auxmsg->getMessageTipe()){
+        case FILE_REQUEST:
+        {
+            FileRequest *auxmsg = check_and_cast<FileRequest *>(msg);
+            handleFileRequest(auxmsg);
+            break;
+        }
+        case REPUTATION_REQUEST:
+        {
+            ReputationRequest *auxmsg = check_and_cast<ReputationRequest *>(msg);
+            handleReputationRequest(auxmsg);
+            break;
+        }
+        case FILE_RESPONSE:
+        {
+            File *auxmsg = check_and_cast<File *>(msg);
+            handleFileResponse(auxmsg);
+            break;
+        }
+        case REPUTATION_RESPONSE:
+        {
+            Reputation *auxmsg = check_and_cast<Reputation *>(msg);
+            handleReputationResponse(auxmsg);
+        }
     }
 }
 
@@ -211,7 +222,7 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     // Si el mensaje de reputación es del nodo que he preguntado, y me lo mandaban a mi.
     if((msg->getTargetNodeId() == nodeServed) && (msg->getDestinationNodeId() == getIndex())){
         // Si aún no tengo almacenada la opinión de ese nodo me la quedo.
-        if(nodeContributed.find() != myset.end()){
+        if(nodeContributed.find(nodeServed) != nodeContributed.end()){
             tempReputation.totalRequest += msg->getTotalRequests();
             tempReputation.acceptedRequest += msg->getAcceptedRequests();
             // Añado el nodo a la lista de los que han contribuido para no coger más.
@@ -240,7 +251,7 @@ void NoFreeNode::reputationRequest( )
         File *fmsg = new File("File");
         fmsg->setSourceNodeId(getIndex());
         fmsg->setDestinationNodeId(nodeServed);
-        send(fms,"dataGate$o", nodeServedGate);
+        send(fmsg,"dataGate$o", nodeServedGate);
     }
     // Ya se ha decidido si se sirve o no y el nodo queda libre para servir a otra persona.
     nodeServed = -1;
