@@ -73,11 +73,8 @@ network MyNetwork
         noFreeNode[numNodes]: NoFreeNode;
     connections:
         // Hace las conexiones de datos aleatoriamente
-        for i=1..numNodes-1, for j=0..i-1, if (uniform(0,1)>connectivity) {
-            noFreeNode[i].dataGate++ <--> DataChannel <--> noFreeNode[j].dataGate++;
-        }
-        // Hace un grafo completo para las conexiones de control.
         for i=1..numNodes-1, for j=0..i-1 {
+            noFreeNode[i].dataGate++ <--> DataChannel <--> noFreeNode[j].dataGate++ if uniform(0,1)>connectivity;
             noFreeNode[i].controlGate++ <--> ControlChannel <--> noFreeNode[j].controlGate++;
         }
 }
