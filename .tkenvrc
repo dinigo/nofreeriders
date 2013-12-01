@@ -1,2 +1,3 @@
 # Partial Tkenv config file -- see $HOME/.tkenvrc as well
+inspector "MyNetwork" "MyNetwork" "2" "681x721+683+24:normal"
 
