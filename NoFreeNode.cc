@@ -166,6 +166,7 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
 {
     // Si ya estamos sirviendo a otro nodo salimos, que aún no sabemos encolar eventos.
     if(nodeServed != -1) return;
+    else scheduleAt(simTime()+reputationRequestTimeout, reputationRequestTimer);
     // Borra la lista de nodos de los que se ha recibido reputación.
     nodeContributed.clear();
     // Mira a quién estamos sirviendo.
