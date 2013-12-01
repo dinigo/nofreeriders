@@ -42,7 +42,14 @@
 class NoFreeNode : public cSimpleModule
 {
 protected:
-    PeerReputation *tempReputation;     // Almacena temporalmente la reputación
+    // Clase muy básica para almacenar datos de cada nodo.
+    struct PeerReputation {
+        PeerReputation() : acceptedRequest(0), totalRequests(0) {}
+        double lastUpdate;
+        int acceptedRequest;
+        int totalRequest;
+    };
+    PeerReputation tempReputation;      // Almacena temporalmente la reputación
                                         // de un nodo para decidir si servirle o no
     int nodeRequested;                  // Nodo al que se ha pedido el archivo
     int downloadFileTiemout;            // Tiempo hasta que se realize petición
@@ -57,17 +64,7 @@ protected:
     cMessage *fileRequestTimer;         // Timer para esperar a que me sirvan un archivo.
                                         // Funciona con fileRequestTimeout.
     cMessage *downloadFileTimer;        // Timer para encolar nuevas peticiones de archivo.
-
-    // Clase muy básica para almacenar datos de cada nodo.
-    struct PeerReputation {
-        PeerReputation() : acceptedRequest(0), totalRequests(0) {}
-        double lastUpdate;
-        int acceptedRequest;
-        int totalRequest;
-    };
-
-    // Lista de nodos adyacentes y su reputación.
-    std::map <int, PeerStatistics> nodeMap;
+    std::map <int, PeerStatistics> nodeMap;// Lista de nodos adyacentes y su reputación.
 
 
 public:
@@ -84,8 +81,10 @@ public:
     ~NoFreeNode ();
 
     /**
-     * Inicialización de la aplicación (bootstrap). Se ponen en marcha los
-     * eventos que dan lugar a la simulación
+     * Lee las variables por parámetro que se declaran en la topología o en la
+     * definición de la simulación. Instancia los mensajes que serán timers y
+     * lanza el primer timer para descargar un archivo que desencadenará el
+     * resto de eventos.
      */
     virtual void initialize ();
 

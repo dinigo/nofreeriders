@@ -117,7 +117,26 @@ NoFreeNode::handleTimerEvent( cMessage *msg )
 
 NoFreeNode::handleMessage( cMessage *msg )
 {
-    // TODO
+    // Se hace cast al tipo de mensaje que heredan todos los demás
+    NoFreeMessage *nfmsg = check_and_cast<NoFreeMessage *>(msg);
+    // Según su tipo se hace casting al tipo adecuado y se pasa a la función.
+    switch(nfmsg->getMessageTipe()){
+    case FILE_REQUEST:
+        FileRequest *auxmsg = check_and_cast<FileRequest *>(msg);
+        handleFileRequest(auxmsg);
+        break;
+    case REPUTATION_REQUEST:
+        ReputationRequest *auxmsg = check_and_cast<ReputationRequest *>(msg);
+        handleReputationRequest(auxmsg);
+        break;
+    case FILE:
+        File *auxmsg = check_and_cast<File *>(msg);
+        handleFileResponse(auxmsg);
+        break;
+    case REPUTATION:
+        Reputation *auxmsg = check_and_cast<Reputation *>(msg);
+        handleReputationResponse(auxmsg);
+    }
 }
 
 NoFreeNode::handleFileRequest( FileRequest *msg )
