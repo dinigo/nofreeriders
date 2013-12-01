@@ -41,7 +41,6 @@ simple NoFreeNode
         double fileRequestTimeout = default(0.5);
         double downloadFileTiemout = default(0.1);
         double kindness = default(uniform(0.5,0.9));
-        double timeTillFileRequest = default(uniform(1,50));
 
         @display("i=old/bwcomp;is=n");
     gates:

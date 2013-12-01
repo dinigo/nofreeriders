@@ -39,6 +39,8 @@
 // Declara el módulo para que pueda usarse en el archivo de topología
 Define_Module(NoFreeNode);
 
+using namespace std;
+
 NoFreeNode::NoFreeNode()
 {
     // No necesita nada de momento.
@@ -48,10 +50,10 @@ NoFreeNode::~NoFreeNode()
 {
     cancelAndDelete(reputationRequestTimer);
     cancelAndDelete(fileRequestTimer);
-    cancelAndDelete(downloadFiletTimer);
+    cancelAndDelete(downloadFileTimer);
 }
 
-NoFreeNode::initialize()
+void NoFreeNode::initialize()
 {
     requiredShareRate       = par("requiredShareRate");
     // Indicadores de archivo pedido a este nodo y siendo servido por él.
@@ -68,11 +70,11 @@ NoFreeNode::initialize()
     fileRequestTimer        = new cMessage("fileRequestTiemout");
     downloadFileTimer       = new cMessage("downloadFileTiemout");
     // Encolo la primera descarga dentro de un tiempo "downloadFileTiemout".
-    downloadFileTiemout = &par("downloadFileTiemout");
+    downloadFileTiemout     = par("downloadFileTiemout");
     scheduleAt(simTime()+downloadFileTiemout, downloadFileTimer);
 }
 
-NoFreeNode::fileRequest()
+void NoFreeNode::fileRequest()
 {
     // Elijo a la persona de entre los conectados a mi.
     int n = gateSize("dataGate$o");
@@ -98,7 +100,7 @@ NoFreeNode::fileRequest()
     scheduleAt(simTime()+downloadFileTiemout, downloadFileTimer);
 }
 
-NoFreeNode::handleTimerEvent( cMessage *msg )
+void NoFreeNode::handleTimerEvent( cMessage *msg )
 {
     // Es hora de descargarse un archivo de alguien.
     if(msg == downloadFileTimer){
@@ -117,7 +119,7 @@ NoFreeNode::handleTimerEvent( cMessage *msg )
     }
 }
 
-NoFreeNode::handleMessage( cMessage *msg )
+void NoFreeNode::handleMessage( cMessage *msg )
 {
     // Se hace cast al tipo de mensaje que heredan todos los demás
     NoFreeMessage *nfmsg = check_and_cast<NoFreeMessage *>(msg);
@@ -141,7 +143,7 @@ NoFreeNode::handleMessage( cMessage *msg )
     }
 }
 
-NoFreeNode::handleFileRequest( FileRequest *msg )
+void NoFreeNode::handleFileRequest( FileRequest *msg )
 {
     // Borra la lista de nodos de los que se ha recibido reputación.
     nodeContributed.clear();
@@ -168,7 +170,7 @@ NoFreeNode::handleFileRequest( FileRequest *msg )
     cancelAndDelete(msg);
 }
 
-NoFreeNode::handleFileResponse( File *msg )
+void NoFreeNode::handleFileResponse( File *msg )
 {
     // Si aún no ha vencido el temporizador avisa de que ha recibido para que
     // no le quiten la reputación.
@@ -179,7 +181,7 @@ NoFreeNode::handleFileResponse( File *msg )
     cancelAndDelete(msg);
 }
 
-NoFreeNode::handleReputationRequest( ReputationRequest *msg )
+void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 {
     // Si ya tenemos reputación de este nodo la enviamos.
     int targetNode = msg->getTargetNodeId();
@@ -204,7 +206,7 @@ NoFreeNode::handleReputationRequest( ReputationRequest *msg )
     cancelAndDelete(msg);
 }
 
-NoFreeNode::handleReputationResponse( Reputation *msg )
+void NoFreeNode::handleReputationResponse( Reputation *msg )
 {
     // Si el mensaje de reputación es del nodo que he preguntado, y me lo mandaban a mi.
     if((msg->getTargetNodeId() == nodeServed) && (msg->getDestinationNodeId() == getIndex())){
@@ -228,7 +230,7 @@ NoFreeNode::handleReputationResponse( Reputation *msg )
     cancelAndDelete(msg);
 }
 
-NoFreeNode::reputationRequest( )
+void NoFreeNode::reputationRequest( )
 {
     // Decide si el nodo al que servir es digno de ser servido.
     double rate = (double)tempReputation.acceptedRequest / (double)tempReputation.totalRequest;
@@ -244,7 +246,7 @@ NoFreeNode::reputationRequest( )
     nodeServed = -1;
 }
 
-NoFreeNode::finishApp( )
+void NoFreeNode::finishApp( )
 {
     // TODO
 }

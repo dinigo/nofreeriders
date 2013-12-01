@@ -152,10 +152,12 @@ public:
      * Petición de reputación: al principio se hará empleando el array de nodos
      * directamente y buscando pero luego se usará un algoritmo de flooding.
      */
-    virtual void reputationRequest ( int nodeId );
+    virtual void reputationRequest ( );
 
     /**
      * Graba estadísticas y logs.
      */
     virtual void finishApp ( );
 };
+
+#endif
