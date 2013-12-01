@@ -46,14 +46,23 @@ protected:
     /** Clase muy básica para almacenar la reputación */
     struct PeerReputation {
         // Constructor que inicializa a 0 los dos contadores de peticiones.
-        PeerReputation() : acceptedRequest(0), totalRequests(0) {}
+        PeerReputation(int a=0, int t=0) : acceptedRequest(a), totalRequest(t) {}
+        /** Operador asignación, para poder poner `PeerReputation a = b`. */
+        PeerReputation operator = (PeerReputation a)
+        {
+            this->acceptedRequest=a.acceptedRequest;
+            this->totalRequest=a.totalRequest;
+            return *this;
+        }
         int acceptedRequest;    // Peticiones aceptadas.
         int totalRequest;       // Peticiones aceptadas.
     };
     PeerReputation tempReputation;      // Almacena temporalmente la reputación
-                                        // de un nodo para decidir si servirle o no
-    int nodeRequested;                  // Nodo al que se ha pedido el archivo
-    int nodeServed;                     // Nodo al que se va a enviar el archivo
+                                        // de un nodo para decidir si servirle o no.
+    double requiredShareRate;          // Ratio necesario de reputación para compartir (p.ej: 0.8);
+    int nodeRequested;                  // Nodo al que se ha pedido el archivo.
+    int nodeServed;                     // Nodo al que se va a enviar el archivo.
+    int nodeServedGate;                 // Id de la puerta por la que servir el archivo.
     std::set <int> nodeContributed;     // Lista de nodos que han aportado su reputación.
     int downloadFileTiemout;            // Tiempo hasta que se realize petición
     int reputationTimeout;              // Tiempo de validez de la reputación.
@@ -67,7 +76,7 @@ protected:
     cMessage *fileRequestTimer;         // Timer para esperar a que me sirvan un archivo.
                                         // Funciona con fileRequestTimeout.
     cMessage *downloadFileTimer;        // Timer para encolar nuevas peticiones de archivo.
-    std::map <int, PeerStatistics> nodeMap;// Lista de nodos adyacentes y su reputación.
+    std::map <int, PeerReputation> nodeMap;// Lista de nodos adyacentes y su reputación.
 
 
 public:
@@ -149,8 +158,4 @@ public:
      * Graba estadísticas y logs.
      */
     virtual void finishApp ( );
-
-private:
-
-}
 };

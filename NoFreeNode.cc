@@ -37,7 +37,7 @@
 #include "NoFreeMessage_m.h"
 
 // Declara el módulo para que pueda usarse en el archivo de topología
-Define_Module(NoFree);
+Define_Module(NoFreeNode);
 
 NoFreeNode::NoFreeNode()
 {
@@ -53,6 +53,7 @@ NoFreeNode::~NoFreeNode()
 
 NoFreeNode::initialize()
 {
+    requiredShareRate       = par("requiredShareRate");
     // Indicadores de archivo pedido a este nodo y siendo servido por él.
     nodeRequested = -1;
     nodeServed    = -1;
@@ -142,18 +143,19 @@ NoFreeNode::handleMessage( cMessage *msg )
 
 NoFreeNode::handleFileRequest( FileRequest *msg )
 {
-    // Si ya tenemos reputación de este nodo la usamos.
-    if(nodeMap.find(nodeServed) == nodeMap.end){
+    // Borra la lista de nodos de los que se ha recibido reputación.
+    nodeContributed.clear();
+    // Mira a quién estamos sirviendo.
+    nodeServed = msg->getSourceNodeId();
+    nodeServedGate = msg->getArrivalGate()->getIndex();
+    // Si ya tenemos almacenada reputación de este nodo la usamos.
+    if(nodeMap.find(nodeServed) != nodeMap.end){
         tempReputation = nodeMap[nodeServed];
     }
     // Si no se borra la que se tenía, que sería de otro nodo.
     else{
         tempReputation = new PeerReputation();
     }
-    // Borra la lista de nodos de los que se ha recibido reputación.
-    nodeContributed.clear();
-    // Mira a quién estamos sirviendo.
-    nodeServed = msg->getSourceNodeId();
     // Crea un mensaje ReputationRequest para el nodo que pide.
     ReputationRequest *rrmsg = new ReputationRequest("ReputationRequest");
     rrmsg->setSourceNodeId(getIndex());
@@ -173,14 +175,33 @@ NoFreeNode::handleFileResponse( File *msg )
     if(nodeRequested != -1){
         nodeRequested = -1;
     }
-    // Borra el mensaje, que de todas formas contenía una película descargada
-    // ilegalmente, por lo que es la linea de acción correcta.
+    // Borra el mensaje.
     cancelAndDelete(msg);
 }
 
 NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 {
-    // TODO
+    // Si ya tenemos reputación de este nodo la enviamos.
+    int targetNode = msg->getTargetNodeId();
+    if(nodeMap.find(targetNode) != nodeMap.end){
+        // Crea un mensaje.
+        Reputation *rmsg = new Reputation("Reputation");
+        rmsg->setTargetNodeId(msg->getTargetNodeId());
+        rmsg->setSourceNodeId(getIndex());
+        rmsg->setDefaultOwner(msg->getSourceNodeId());
+        rmsg->setTotalRequests(nodeMap[targetNode].totalRequest);
+        rmsg->setAcceptedRequests(nodeMap[targetNode].acceptedRequest);
+        // La reenvía por la puerta que llegó.
+        send(rmsg,"controlGate$o", msg->getArrivalGate()->getIndex());
+    }
+    // Y se la pedimos a los demás nodos de la red.
+    for(int i=0; i<gateSize("controlGate$o"); i++){
+        if(msg->getArrivalGate()->getIndex() != i){
+            send(msg->dup(),"controlGate$o", i);
+        }
+    }
+    // Borro el mensaje original, que para eso se enviaron duplicados.
+    cancelAndDelete(msg);
 }
 
 NoFreeNode::handleReputationResponse( Reputation *msg )
@@ -203,15 +224,24 @@ NoFreeNode::handleReputationResponse( Reputation *msg )
             }
         }
     }
-    // Borro el mensaje original, que para eso se eniaron duplicados.
+    // Borro el mensaje original, que para eso se enviaron duplicados.
     cancelAndDelete(msg);
 }
-cancelAndDelete(msg);
-}
 
-NoFreeNode::reputationRequest( int nodeId )
+NoFreeNode::reputationRequest( )
 {
-    // TODO
+    // Decide si el nodo al que servir es digno de ser servido.
+    double rate = (double)tempReputation.acceptedRequest / (double)tempReputation.totalRequest;
+    // Si es un buen peer se le da el archivo.
+    if(rate >= requiredShareRate){
+        // Estos campos no son necesarios, pero podría implementarse un factory que lo hiciese por mi.
+        File *fmsg = new File("File");
+        fmsg->setSourceNodeId(getIndex());
+        fmsg->setDestinationNodeId(nodeServed);
+        send(fms,"dataGate$o", nodeServedGate);
+    }
+    // Ya se ha decidido si se sirve o no y el nodo queda libre para servir a otra persona.
+    nodeServed = -1;
 }
 
 NoFreeNode::finishApp( )
