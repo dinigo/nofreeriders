@@ -35,6 +35,7 @@ package nofreeriders;
 simple NoFreeNode
 {
     parameters:
+        double requiredShareRate = default(0.8);
         double reputationTimeout = default(30.0);
         double reputationRequestTimeout = default(1);
         double fileRequestTimeout = default(0.5);
