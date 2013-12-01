@@ -53,8 +53,9 @@ NoFreeNode::~NoFreeNode()
 
 NoFreeNode::initialize()
 {
-    nodeRequested = -1; // Al comienzo no hemos pedido a ningún nodo. Se toma "ninguno" como "-1".
-    *tempReputation = new PeerReputation();
+    // Indicadores de archivo pedido a este nodo y siendo servido por él.
+    nodeRequested = -1;
+    nodeServed    = -1;
     // Lee los valores de las variables desde el archivo de topología.
     reputationTimeout       = par("reputationTiemout");
     reputationRequestTimeout= par("reputationRequestTimeout");
@@ -141,7 +142,28 @@ NoFreeNode::handleMessage( cMessage *msg )
 
 NoFreeNode::handleFileRequest( FileRequest *msg )
 {
-    // TODO
+    // Si ya tenemos reputación de este nodo la usamos.
+    if(nodeMap.find(nodeServed) == nodeMap.end){
+        tempReputation = nodeMap[nodeServed];
+    }
+    // Si no se borra la que se tenía, que sería de otro nodo.
+    else{
+        tempReputation = new PeerReputation();
+    }
+    // Borra la lista de nodos de los que se ha recibido reputación.
+    nodeContributed.clear();
+    // Mira a quién estamos sirviendo.
+    nodeServed = msg->getSourceNodeId();
+    // Crea un mensaje ReputationRequest para el nodo que pide.
+    ReputationRequest *rrmsg = new ReputationRequest("ReputationRequest");
+    rrmsg->setSourceNodeId(getIndex());
+    rrmsg->setTargetNodeId(nodeServed);
+    // Reenvía copias del ReputationRequest por todas las salidas.
+    for(int i=0; i<gateSize("controlGate$o"); i++){
+        send(rrmsg->dup());
+    }
+    // Borra el mensaje.
+    cancelAndDelete(msg);
 }
 
 NoFreeNode::handleFileResponse( File *msg )
@@ -163,7 +185,28 @@ NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 
 NoFreeNode::handleReputationResponse( Reputation *msg )
 {
-    // TODO
+    // Si el mensaje de reputación es del nodo que he preguntado, y me lo mandaban a mi.
+    if((msg->getTargetNodeId() == nodeServed) && (msg->getDestinationNodeId() == getIndex())){
+        // Si aún no tengo almacenada la opinión de ese nodo me la quedo.
+        if(nodeContributed.find() != myset.end()){
+            tempReputation.totalRequest += msg->getTotalRequests();
+            tempReputation.acceptedRequest += msg->getAcceptedRequests();
+            // Añado el nodo a la lista de los que han contribuido para no coger más.
+            nodeContributed.insert(msg->getSourceNodeId());
+        }
+    }
+    // Si no era para mi lo reenvío por todas las salidas menos la que llegó.
+    else{
+        for(int i=0; i<gateSize("controlGate$o"); i++){
+            if(msg->getArrivalGate()->getIndex() != i){
+                send(msg->dup(),"controlGate$o", i);
+            }
+        }
+    }
+    // Borro el mensaje original, que para eso se eniaron duplicados.
+    cancelAndDelete(msg);
+}
+cancelAndDelete(msg);
 }
 
 NoFreeNode::reputationRequest( int nodeId )
