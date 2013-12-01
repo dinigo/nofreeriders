@@ -126,35 +126,38 @@ void NoFreeNode::handleMessage( cMessage *msg )
 {
     if(msg->isSelfMessage()){
         handleTimerEvent(msg);
+        return;
     }
-    else{
-        // Se hace cast al tipo de mensaje que heredan todos los demás
-        NoFreeMessage *auxmsg = check_and_cast<NoFreeMessage *>(msg);
-        // Según su tipo se hace casting al tipo adecuado y se pasa a la función.
-        switch(auxmsg->getMessageTipe()){
-            case FILE_REQUEST:
-            {
-                FileRequest *auxmsg = check_and_cast<FileRequest *>(msg);
-                handleFileRequest(auxmsg);
-                break;
-            }
-            case REPUTATION_REQUEST:
-            {
-                ReputationRequest *auxmsg = check_and_cast<ReputationRequest *>(msg);
-                handleReputationRequest(auxmsg);
-                break;
-            }
-            case FILE_RESPONSE:
-            {
-                File *auxmsg = check_and_cast<File *>(msg);
-                handleFileResponse(auxmsg);
-                break;
-            }
-            case REPUTATION_RESPONSE:
-            {
-                Reputation *auxmsg = check_and_cast<Reputation *>(msg);
-                handleReputationResponse(auxmsg);
-            }
+    // Se hace cast al tipo de mensaje que heredan todos los demás
+    NoFreeMessage *auxmsg = check_and_cast<NoFreeMessage *>(msg);
+    // Se checkea el TTL para ver si ha hecho demasiados saltos ya.
+    int ttl = auxmsg->getTtl();
+    if(ttl<0) cancelAndDelete(msg);
+    else auxmsg->setTtl(ttl-1);
+    // Según su tipo se hace casting al tipo adecuado y se pasa a la función.
+    switch(auxmsg->getMessageTipe()){
+        case FILE_REQUEST:
+        {
+            FileRequest *auxmsg = check_and_cast<FileRequest *>(msg);
+            handleFileRequest(auxmsg);
+            break;
+        }
+        case REPUTATION_REQUEST:
+        {
+            ReputationRequest *auxmsg = check_and_cast<ReputationRequest *>(msg);
+            handleReputationRequest(auxmsg);
+            break;
+        }
+        case FILE_RESPONSE:
+        {
+            File *auxmsg = check_and_cast<File *>(msg);
+            handleFileResponse(auxmsg);
+            break;
+        }
+        case REPUTATION_RESPONSE:
+        {
+            Reputation *auxmsg = check_and_cast<Reputation *>(msg);
+            handleReputationResponse(auxmsg);
         }
     }
 }
