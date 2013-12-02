@@ -105,6 +105,8 @@ void NoFreeNode::fileRequest()
 
 void NoFreeNode::handleTimerEvent( cMessage *msg )
 {
+    // Si no está conectado a ningún otro nodo no pedir archivos
+    if(gateSize()==0) return;
     // Es hora de descargarse un archivo de alguien.
     if(msg == downloadFileTimer){
         fileRequest();
@@ -186,9 +188,9 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     rrmsg->setSourceNodeId(getIndex());
     rrmsg->setTargetNodeId(nodeServed);
     // Reenvía copias del ReputationReques a todos menos a quien
-    for(int i=0; i<gateSize("controlGate$o"); i++){
+    for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
-            send(rrmsg->dup(),"controlGate$o", i);
+            send(rrmsg->dup(),"dataGate$o", i);
         }
     }
     // Borra el mensaje.
@@ -221,12 +223,12 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
         rmsg->setTotalRequests(nodeMap[targetNode].totalRequest);
         rmsg->setAcceptedRequests(nodeMap[targetNode].acceptedRequest);
         // La reenvía por la puerta que llegó.
-        send(rmsg,"controlGate$o", msg->getArrivalGate()->getIndex());
+        send(rmsg,"dataGate$o", msg->getArrivalGate()->getIndex());
     }
     // Y se la pedimos a los demás nodos de la red.
-    for(int i=0; i<gateSize("controlGate$o"); i++){
+    for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
-            send(msg->dup(),"controlGate$o", i);
+            send(msg->dup(),"dataGate$o", i);
         }
     }
     // Borro el mensaje original, que para eso se enviaron duplicados.
@@ -247,9 +249,9 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     }
     // Si no era para mi lo reenvío por todas las salidas menos la que llegó.
     else{
-        for(int i=0; i<gateSize("controlGate$o"); i++){
+        for(int i=0; i<gateSize("dataGate$o"); i++){
             if(msg->getArrivalGate()->getIndex() != i){
-                send(msg->dup(),"controlGate$o", i);
+                send(msg->dup(),"dataGate$o", i);
             }
         }
     }

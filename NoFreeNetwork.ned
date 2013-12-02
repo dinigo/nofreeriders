@@ -44,7 +44,6 @@ simple NoFreeNode
         @display("i=old/bwcomp;is=n");
     gates:
         inout dataGate[];     // Para FileRequest y File
-        inout controlGate[];  // Para ReputationRequest y Reputation
 }
 
 // ------------------ CHANNELS ------------------//
@@ -76,6 +75,5 @@ network MyNetwork
         // Itera sobre todas las parejas de nodos.
         for i=1..numNodes-1, for j=0..i-1 {
             noFreeNode[i].dataGate++ <--> DataChannel <--> noFreeNode[j].dataGate++ if uniform(0,1)<connectivity;
-            noFreeNode[i].controlGate++ <--> ControlChannel <--> noFreeNode[j].controlGate++;
         }
 }
