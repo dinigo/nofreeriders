@@ -57,6 +57,7 @@ NoFreeNode::~NoFreeNode()
 
 void NoFreeNode::initialize()
 {
+
     requiredShareRate       = par("requiredShareRate");
     // Indicadores de archivo pedido a este nodo y siendo servido por él.
     nodeRequested = -1;
@@ -73,6 +74,14 @@ void NoFreeNode::initialize()
     downloadFileTimer       = new cMessage("downloadFileTimer");
     // Encolo la primera descarga dentro de un tiempo "downloadFileTimeout".
     downloadFileTimeout     = par("downloadFileTimeout");
+
+    WATCH(nodeRequested);
+    WATCH(nodeServed);
+    WATCH(tempReputation);
+    //WATCH_SET(nodeContributed);
+    WATCH_MAP(nodeMap);
+
+
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
 }
 
@@ -106,7 +115,7 @@ void NoFreeNode::fileRequest()
 void NoFreeNode::handleTimerEvent( cMessage *msg )
 {
     // Si no está conectado a ningún otro nodo no pedir archivos
-    if(gateSize()==0) return;
+    if(gateSize("dataGate$o")==0) return;
     // Es hora de descargarse un archivo de alguien.
     if(msg == downloadFileTimer){
         fileRequest();
@@ -259,12 +268,16 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     cancelAndDelete(msg);
 }
 
+
+
 void NoFreeNode::reputationRequest( )
 {
-    // Decide si el nodo al que servir es digno de ser servido.
     double rate = (double)tempReputation.acceptedRequest / (double)tempReputation.totalRequest;
-    // Si es un buen peer se le da el archivo.
-    if(rate >= requiredShareRate){
+    bool isNewNode   = (tempReputation.totalRequest == 0)? true : false;
+    bool isGoodRatio = (rate >= requiredShareRate)? true : false;
+    bool isGoodNode  = (uniform(0,1)>kindness)? true: false;
+    // Decide si el nodo al que servir es digno de ser servido.
+    if((isNewNode || isGoodRatio) && isGoodNode){
         // Estos campos no son necesarios, pero podría implementarse un factory que lo hiciese por mi.
         File *fmsg = new File("File");
         fmsg->setSourceNodeId(getIndex());
