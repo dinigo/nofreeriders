@@ -288,7 +288,7 @@ void NoFreeNode::reputationRequest( )
     nodeServed = -1;
 }
 
-void NoFreeNode::finishApp( )
+void NoFreeNode::finish( )
 {
     // TODO
 }

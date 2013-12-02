@@ -155,7 +155,7 @@ public:
     /**
      * Graba estadísticas y logs.
      */
-    virtual void finishApp ( );
+    virtual void finish ( );
 };
 
 #endif
