@@ -35,12 +35,12 @@ package nofreeriders;
 simple NoFreeNode
 {
     parameters:
-        double requiredShareRate = default(0.8);
-        double reputationTimeout = default(30.0);
-        double reputationRequestTimeout = default(1);
-        double fileRequestTimeout = default(0.5);
-        double downloadFileTimeout = default(0.1);
-        double kindness = default(uniform(0.5,0.9));
+        double requiredShareRate                 = default(0.8);
+        double reputationTimeout        @unit(s) = default(0.01s);
+        double reputationRequestTimeout @unit(s) = default(10s);
+        double fileRequestTimeout       @unit(s) = default(0.5s);
+        double downloadFileTimeout      @unit(s) = default(0.1s);
+        double kindness                          = default(uniform(0.5,0.9));
         @display("i=old/bwcomp;is=n");
     gates:
         inout dataGate[];     // Para FileRequest y File
@@ -66,8 +66,8 @@ channel ControlChannel extends ned.DelayChannel
 network MyNetwork
 {
     parameters:
-        int numNodes = default(10);         // Numero de nodos tipo NoFreeNode
-        double connectivity = default(0.5);    // probabilidad de conectar con otro
+        int numNodes = default(100);        // Numero de nodos tipo NoFreeNode
+        double connectivity = default(0.1); // probabilidad de conectar con otro
         @display("i=block/network2");        
 
     submodules:
