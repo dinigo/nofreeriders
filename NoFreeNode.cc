@@ -185,9 +185,11 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     ReputationRequest *rrmsg = new ReputationRequest("ReputationRequest");
     rrmsg->setSourceNodeId(getIndex());
     rrmsg->setTargetNodeId(nodeServed);
-    // Reenvía copias del ReputationRequest por todas las salidas.
+    // Reenvía copias del ReputationReques a todos menos a quien
     for(int i=0; i<gateSize("controlGate$o"); i++){
-        send(rrmsg->dup(),"controlGate$o", i);
+        if(msg->getArrivalGate()->getIndex() != i){
+            send(rrmsg->dup(),"controlGate$o", i);
+        }
     }
     // Borra el mensaje.
     cancelAndDelete(msg);
@@ -206,8 +208,10 @@ void NoFreeNode::handleFileResponse( File *msg )
 
 void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 {
-    // Si ya tenemos reputación de este nodo la enviamos.
     int targetNode = msg->getTargetNodeId();
+    // Si somos nosotros mismos no contestamos.
+    if(targetNode == getIndex()) return;
+    // Si ya tenemos reputación de este nodo la enviamos.
     if(nodeMap.find(targetNode) != nodeMap.end()){
         // Crea un mensaje.
         Reputation *rmsg = new Reputation("Reputation");
