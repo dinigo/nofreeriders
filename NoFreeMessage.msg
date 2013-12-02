@@ -51,12 +51,14 @@ packet NoFreeMessage
 // Petición de archivo.
 packet FileRequest extends NoFreeMessage
 {
+    string displayString = "b=15,15,rect,green";
     messageTipe @enum(MessageType) = FILE_REQUEST;
 }
 
 // Petición de reputación.
 packet ReputationRequest extends NoFreeMessage
 {
+    string displayString = "b=15,15,rect,yellow";
     messageTipe @enum(MessageType) = REPUTATION_REQUEST;
     int targetNodeId;       // Por qué nodo pregunta.
 }
@@ -64,12 +66,14 @@ packet ReputationRequest extends NoFreeMessage
 // Paquete que reprsenta la transferencia de un archivo entre dos nodos.
 packet File extends NoFreeMessage
 {
+    string displayString = "b=15,15,rect,blue";
     messageTipe @enum(MessageType) = FILE_RESPONSE;
 }
 
 // Datos de la reputación de un nodo.
 packet Reputation extends NoFreeMessage
 {
+    string displayString = "b=15,15,rect,blue";
     messageTipe @enum(MessageType) = REPUTATION_RESPONSE;
     int targetNodeId;       // De quién son los datos de reputación.
     int totalRequests;
