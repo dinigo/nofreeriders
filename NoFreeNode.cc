@@ -75,11 +75,11 @@ void NoFreeNode::initialize()
     // Encolo la primera descarga dentro de un tiempo "downloadFileTimeout".
     downloadFileTimeout     = par("downloadFileTimeout");
 
-    WATCH(nodeRequested);
-    WATCH(nodeServed);
-    WATCH(tempReputation);
+    //WATCH(nodeRequested);
+    //WATCH(nodeServed);
+    //WATCH(tempReputation);
     //WATCH_SET(nodeContributed);
-    WATCH_MAP(nodeMap);
+    //WATCH_MAP(nodeMap);
 
 
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
