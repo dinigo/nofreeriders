@@ -156,6 +156,12 @@ public:
      * Graba estadísticas y logs.
      */
     virtual void finish ( );
+
+    /**
+     * Actualiza la informacíon que se muestra en cada nodo (porque los watch
+     * no funcionan sobre mapas. MUCHAS GRACIAS OMNET!!!
+     */
+    virtual void updateDisplay ( );
 };
 
 #endif

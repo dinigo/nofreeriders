@@ -34,6 +34,7 @@
 #include <map>
 #include <set>
 #include <omnetpp.h>
+#include <sstream>
 
 #include "NoFreeNode.h"
 #include "NoFreeMessage_m.h"
@@ -83,6 +84,7 @@ void NoFreeNode::initialize()
 
 
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
+    updateDisplay();
 }
 
 void NoFreeNode::fileRequest()
@@ -93,6 +95,7 @@ void NoFreeNode::fileRequest()
     // Construyo un paquete.
     FileRequest *frmsg = new FileRequest("fileRequest");
     nodeRequested = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getIndex();
+    updateDisplay();
     frmsg->setSourceNodeId(getIndex());
     frmsg->setDestinationNodeId(n);
     // Le envío una petición.
@@ -110,6 +113,7 @@ void NoFreeNode::fileRequest()
     // Encolo un nuevo evento dentro de un tiempo aleatorio.
     downloadFileTimeout = par("downloadFileTimeout");
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
+    updateDisplay();
 }
 
 void NoFreeNode::handleTimerEvent( cMessage *msg )
@@ -131,6 +135,7 @@ void NoFreeNode::handleTimerEvent( cMessage *msg )
     else if(msg == reputationRequestTimer){
         reputationRequest();
     }
+    updateDisplay();
 }
 
 void NoFreeNode::handleMessage( cMessage *msg )
@@ -204,6 +209,7 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     }
     // Borra el mensaje.
     cancelAndDelete(msg);
+    updateDisplay();
 }
 
 void NoFreeNode::handleFileResponse( File *msg )
@@ -215,6 +221,7 @@ void NoFreeNode::handleFileResponse( File *msg )
     }
     // Borra el mensaje.
     cancelAndDelete(msg);
+    updateDisplay();
 }
 
 void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
@@ -266,6 +273,7 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     }
     // Borro el mensaje original, que para eso se enviaron duplicados.
     cancelAndDelete(msg);
+    updateDisplay();
 }
 
 
@@ -286,9 +294,31 @@ void NoFreeNode::reputationRequest( )
     }
     // Ya se ha decidido si se sirve o no y el nodo queda libre para servir a otra persona.
     nodeServed = -1;
+    updateDisplay();
 }
 
 void NoFreeNode::finish( )
 {
     // TODO
+}
+
+void NoFreeNode::updateDisplay( )
+{
+    //ostringstream buffer;
+    //buffer << "nodeRequested: " << nodeRequested;
+    //getDisplayString().setTagArg("t", 0, buffer.srt().c_srt());
+    //buffer.
+    //stringComposer = "nodeServed: ";
+    //stringComposer += to_string(nodeServed);
+    //getDisplayString().setTagArg("t", 1, stringComposer.c_str());
+    //stringComposer = "tempReputation: TOTAL:";
+    //stringComposer += to_string(tempReputation.totalRequest);
+    //string)+ "  ACEPTADAS:"+ to_str(tempReputation.acceptedRequest);
+    //getDisplayString().setTagArg("t", 2, stringComposer.c_str());
+    //stringComposer = "";
+    //for (auto it=nodeMap.begin(); it!=nodeMap.end(); ++it){
+        //stringComposer += "Nodo[" + it->first + "]:{T:" + to_string(tempReputation.totalRequest)
+                //+ "  A:"+ to_str(tempReputation.acceptedRequest) + "}\n";
+    //}
+    //getDisplayString().setTagArg("tt", 0, stringComposer.c_str());
 }
