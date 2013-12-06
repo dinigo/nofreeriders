@@ -50,13 +50,6 @@ struct PeerReputation {
     PeerReputation() {acceptedRequest=0; totalRequest=0;}
     /** Constructor con parámetros */
     PeerReputation(int a, int t) {acceptedRequest=a; totalRequest=t;}
-    /** Operador asignación, para poder poner `PeerReputation a = b`. */
-    PeerReputation operator=(PeerReputation a)
-    {
-        this->acceptedRequest=a.acceptedRequest;
-        this->totalRequest=a.totalRequest;
-        return *this;
-    }
 };
 
 class NoFreeNode : public cSimpleModule
@@ -158,6 +151,12 @@ public:
      * directamente y buscando pero luego se usará un algoritmo de flooding.
      */
     virtual void reputationRequest ( );
+
+    /**
+     * Reenvía un mensaje por todas las gate menos por la que llegó, cambiando
+     * el destinatario para cada una de ellas.
+     */
+    virtual void forwardMulticast ( NoFreeMessage *msg );
 
     /**
      * Graba estadísticas y logs.
