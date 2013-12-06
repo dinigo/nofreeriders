@@ -76,12 +76,11 @@ void NoFreeNode::initialize()
     // Encolo la primera descarga dentro de un tiempo "downloadFileTimeout".
     downloadFileTimeout     = par("downloadFileTimeout");
 
-    //WATCH(nodeRequested);
-    //WATCH(nodeServed);
-    //WATCH(tempReputation);
-    //WATCH_SET(nodeContributed);
-    //WATCH_MAP(nodeMap);
-
+    WATCH(nodeRequested);
+    WATCH(nodeServed);
+    WATCH(tempReputation);
+    WATCH_SET(nodeContributed);
+    WATCH_MAP(nodeMap);
 
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
     updateDisplay();
@@ -321,4 +320,23 @@ void NoFreeNode::updateDisplay( )
                 //+ "  A:"+ to_str(tempReputation.acceptedRequest) + "}\n";
     //}
     //getDisplayString().setTagArg("tt", 0, stringComposer.c_str());
+}
+
+/**
+ * Operador salida estandar para poder usar el WATCH_MAP()
+ * Inspirador por: https://svn-itec.uni-klu.ac.at/trac2/dash/browser/trunk/omnet_simulation/omnet/test/anim/watch/watchtest.cc?rev=143
+ */
+ostream& operator<<(ostream& os, const PeerReputation& p)
+{
+    return os << "(" << p.acceptedRequest << "/" << p.totalRequest << ")";
+}
+
+/**
+ * Operador entrada estandar para poder usar el WATCH_MAP() en modo r/w
+ * Inspirador por: https://svn-itec.uni-klu.ac.at/trac2/dash/browser/trunk/omnet_simulation/omnet/test/anim/watch/watchtest.cc?rev=143
+ */
+istream& operator>>(istream& is, PeerReputation& p)
+{
+    char dummy;
+    return is >> dummy >> p.acceptedRequest >> dummy >> p.totalRequest >> dummy;
 }

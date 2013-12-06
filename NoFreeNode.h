@@ -40,21 +40,28 @@
 #include "NoFreeMessage_m.h"
 using namespace std;
 
+/**
+ * Clase muy básica para almacenar la reputación
+ */
+struct PeerReputation {
+    int acceptedRequest;    // Peticiones aceptadas.
+    int totalRequest;       // Peticiones aceptadas.
+    /** Constructor por defecto */
+    PeerReputation() {acceptedRequest=0; totalRequest=0;}
+    /** Constructor con parámetros */
+    PeerReputation(int a, int t) {acceptedRequest=a; totalRequest=t;}
+    /** Operador asignación, para poder poner `PeerReputation a = b`. */
+    PeerReputation operator=(PeerReputation a)
+    {
+        this->acceptedRequest=a.acceptedRequest;
+        this->totalRequest=a.totalRequest;
+        return *this;
+    }
+};
+
 class NoFreeNode : public cSimpleModule
 {
 protected:
-    /** Clase muy básica para almacenar la reputación */
-    struct PeerReputation {
-        int acceptedRequest;    // Peticiones aceptadas.
-        int totalRequest;       // Peticiones aceptadas.
-        /** Operador asignación, para poder poner `PeerReputation a = b`. */
-        PeerReputation operator=(PeerReputation a)
-        {
-            this->acceptedRequest=a.acceptedRequest;
-            this->totalRequest=a.totalRequest;
-            return *this;
-        }
-    };
     PeerReputation tempReputation;      // Almacena temporalmente la reputación
                                         // de un nodo para decidir si servirle o no.
     double requiredShareRate;          // Ratio necesario de reputación para compartir (p.ej: 0.8);
