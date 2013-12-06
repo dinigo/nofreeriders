@@ -93,16 +93,10 @@ void NoFreeNode::fileRequest()
     int k = intuniform(0,n-1);
     // Construyo un paquete.
     FileRequest *frmsg = new FileRequest("fileRequest");
-
-//    nodeRequested = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getIndex();
-    nodeRequested = gate("dataGate$i", k)->getIncomingTransmissionChannel()->getSourceGate()->getOwnerModule()->getIndex();
-    ev << "gateId:" << gate("dataGate$o", k)->getId() << "    gateIndex: " << gate("dataGate$o", k)->getIndex() << endl;
-    ev << "nextGateId:" << gate("dataGate$o", k)->getNextGate()->getId() << "    nextGaateIndex: " << gate("dataGate$o", k)->getNextGate()->getIndex() << endl;
-    ev << "sourceModuleId:" << gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getId() << "    sourceModuleIndex: " << gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getIndex() << endl;
-
-    updateDisplay();
-    frmsg->setSourceNodeId(getIndex());
-    frmsg->setDestinationNodeId(n);
+    // Recupero la ID del módulo conectado por esa puerta
+    nodeRequested = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getId();
+    frmsg->setSourceNodeId(getId());
+    frmsg->setDestinationNodeId(nodeRequested);
     // Le envío una petición.
     send(frmsg, "dataGate$o", k);
     EV<<"Nodo["<<getIndex()<<"]:    FileRequest->Nodo["<<nodeRequested<<"]"<<endl;
@@ -193,7 +187,7 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     nodeContributed.clear();
     // Mira a quién estamos sirviendo.
     nodeServed = msg->getSourceNodeId();
-    nodeServedGate = msg->getArrivalGate()->getIndex();
+    nodeServedGate = msg->getArrivalGate()->getId();
     ev << "HFR: [" << nodeServed << "]-->[" << getIndex() << "]" << endl;
     // Si ya tenemos almacenada reputación de este nodo la usamos.
     if(nodeMap.find(nodeServed) != nodeMap.end()){
@@ -206,11 +200,15 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     }
     // Crea un mensaje ReputationRequest para el nodo que pide.
     ReputationRequest *rrmsg = new ReputationRequest("ReputationRequest");
-    rrmsg->setSourceNodeId(getIndex());
+    rrmsg->setSourceNodeId(getId());
+    int destinationNodeId = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getId();
+    rrmsg->setDestinationNodeId(destinationNodeId);
     rrmsg->setTargetNodeId(nodeServed);
     // Reenvía copias del ReputationReques a todos menos a quien
     for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
+            int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
+            rrmsg->setDestinationNodeId(destinationNodeId);
             send(rrmsg->dup(),"dataGate$o", i);
         }
     }
@@ -235,18 +233,18 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 {
     int targetNode = msg->getTargetNodeId();
     // Si somos nosotros mismos no contestamos.
-    if(targetNode == getIndex()) return;
+    if(targetNode == getId()) return;
     // Si ya tenemos reputación de este nodo la enviamos.
     if(nodeMap.find(targetNode) != nodeMap.end()){
         // Crea un mensaje.
         Reputation *rmsg = new Reputation("Reputation");
         rmsg->setTargetNodeId(msg->getTargetNodeId());
-        rmsg->setSourceNodeId(getIndex());
+        rmsg->setSourceNodeId(getId());
         rmsg->setDestinationNodeId(msg->getSourceNodeId());
         rmsg->setTotalRequests(nodeMap[targetNode].totalRequest);
         rmsg->setAcceptedRequests(nodeMap[targetNode].acceptedRequest);
         // La reenvía por la puerta que llegó.
-        send(rmsg,"dataGate$o", msg->getArrivalGate()->getIndex());
+        send(rmsg,"dataGate$o", msg->getArrivalGate()->getId());
     }
     // Y la pedimos por todas las bocas menos por la que llegó.
     for(int i=0; i<gateSize("dataGate$o"); i++){
@@ -261,7 +259,7 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 void NoFreeNode::handleReputationResponse( Reputation *msg )
 {
     // Si el mensaje de reputación es del nodo que he preguntado, y me lo mandaban a mi.
-    if((msg->getTargetNodeId() == nodeServed) && (msg->getDestinationNodeId() == getIndex())){
+    if((msg->getTargetNodeId() == nodeServed) && (msg->getDestinationNodeId() == getId())){
         // Si aún no tengo almacenada la opinión de ese nodo me la quedo.
         if(nodeContributed.find(nodeServed) != nodeContributed.end()){
             tempReputation.totalRequest += msg->getTotalRequests();
@@ -283,8 +281,6 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     updateDisplay();
 }
 
-
-
 void NoFreeNode::reputationRequest( )
 {
     double rate = (double)tempReputation.acceptedRequest / (double)tempReputation.totalRequest;
@@ -295,7 +291,7 @@ void NoFreeNode::reputationRequest( )
     if((isNewNode || isGoodRatio) && isGoodNode){
         // Estos campos no son necesarios, pero podría implementarse un factory que lo hiciese por mi.
         File *fmsg = new File("File");
-        fmsg->setSourceNodeId(getIndex());
+        fmsg->setSourceNodeId(getId());
         fmsg->setDestinationNodeId(nodeServed);
         send(fmsg,"dataGate$o", nodeServedGate);
     }
