@@ -45,7 +45,7 @@ packet NoFreeMessage
     unsigned int messageTipe @enum(MessageType);    // Tipo de paquete.
     int sourceNodeId;           // Índice del nodo que envía el paquete.
     int destinationNodeId;      // Índice del nodo a quien se envía el paquete.
-    int ttl=2;                  // Para que no se propaquen infinitamente.
+    int ttl=3;                  // Para que no se propaquen infinitamente.
 }
 
 // Petición de archivo.
@@ -73,7 +73,7 @@ packet File extends NoFreeMessage
 // Datos de la reputación de un nodo.
 packet Reputation extends NoFreeMessage
 {
-    string displayString = "b=15,15,rect,blue";
+    string displayString = "b=15,15,rect,red";
     messageTipe @enum(MessageType) = REPUTATION_RESPONSE;
     int targetNodeId;       // De quién son los datos de reputación.
     int totalRequests;
