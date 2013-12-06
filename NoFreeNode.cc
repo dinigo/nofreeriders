@@ -93,7 +93,13 @@ void NoFreeNode::fileRequest()
     int k = intuniform(0,n-1);
     // Construyo un paquete.
     FileRequest *frmsg = new FileRequest("fileRequest");
-    nodeRequested = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getIndex();
+
+//    nodeRequested = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getIndex();
+    nodeRequested = gate("dataGate$i", k)->getIncomingTransmissionChannel()->getSourceGate()->getOwnerModule()->getIndex();
+    ev << "gateId:" << gate("dataGate$o", k)->getId() << "    gateIndex: " << gate("dataGate$o", k)->getIndex() << endl;
+    ev << "nextGateId:" << gate("dataGate$o", k)->getNextGate()->getId() << "    nextGaateIndex: " << gate("dataGate$o", k)->getNextGate()->getIndex() << endl;
+    ev << "sourceModuleId:" << gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getId() << "    sourceModuleIndex: " << gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getIndex() << endl;
+
     updateDisplay();
     frmsg->setSourceNodeId(getIndex());
     frmsg->setDestinationNodeId(n);
@@ -139,6 +145,7 @@ void NoFreeNode::handleTimerEvent( cMessage *msg )
 
 void NoFreeNode::handleMessage( cMessage *msg )
 {
+    // Si es un automensaje vemos qué timer ha saltado
     if(msg->isSelfMessage()){
         handleTimerEvent(msg);
         return;
@@ -187,6 +194,7 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     // Mira a quién estamos sirviendo.
     nodeServed = msg->getSourceNodeId();
     nodeServedGate = msg->getArrivalGate()->getIndex();
+    ev << "HFR: [" << nodeServed << "]-->[" << getIndex() << "]" << endl;
     // Si ya tenemos almacenada reputación de este nodo la usamos.
     if(nodeMap.find(nodeServed) != nodeMap.end()){
         tempReputation = nodeMap[nodeServed];
@@ -240,7 +248,7 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
         // La reenvía por la puerta que llegó.
         send(rmsg,"dataGate$o", msg->getArrivalGate()->getIndex());
     }
-    // Y se la pedimos a los demás nodos de la red.
+    // Y la pedimos por todas las bocas menos por la que llegó.
     for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
             send(msg->dup(),"dataGate$o", i);
