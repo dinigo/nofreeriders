@@ -45,7 +45,7 @@ packet NoFreeMessage
     unsigned int messageTipe @enum(MessageType);    // Tipo de paquete.
     int sourceNodeId;           // Índice del nodo que envía el paquete.
     int destinationNodeId;      // Índice del nodo a quien se envía el paquete.
-    int ttl=3;                  // Para que no se propaquen infinitamente.
+    int ttl=1;                  // Para que no se propaquen infinitamente.
 }
 
 // Petición de archivo.
