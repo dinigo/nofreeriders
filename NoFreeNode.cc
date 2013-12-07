@@ -56,12 +56,11 @@ NoFreeNode::~NoFreeNode()
 void NoFreeNode::initialize()
 {
     const int NOBODY = -1;
-    requiredShareRate       = par("requiredShareRate");
     // Indicadores de archivo pedido a este nodo y siendo servido por él.
     nodeRequested = NOBODY;
     nodeServed    = NOBODY;
     // Lee los valores de las variables desde el archivo de topología.
-    reputationTimeout       = par("reputationTimeout");
+    requiredShareRate       = par("requiredShareRate");
     reputationRequestTimeout= par("reputationRequestTimeout");
     fileRequestTimeout      = par("fileRequestTimeout");
     downloadFileTimeout     = par("downloadFileTimeout");
@@ -72,6 +71,8 @@ void NoFreeNode::initialize()
     downloadFileTimer       = new cMessage("downloadFileTimer");
     // Encolo la primera descarga dentro de un tiempo "downloadFileTimeout".
     downloadFileTimeout     = par("downloadFileTimeout");
+    // Decide si es un freerider a partir de la "bondad" del nodo
+    isFreerider = (uniform(0,1)<kindness)? true : false;
 
     WATCH(nodeRequested);
     WATCH(nodeServed);
@@ -79,6 +80,7 @@ void NoFreeNode::initialize()
     WATCH_SET(nodeContributed);
     WATCH_MAP(nodeMap);
     WATCH(kindness);
+    WATCH(isFreerider);
 
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
     updateDisplay();
@@ -177,8 +179,8 @@ void NoFreeNode::handleMessage( cMessage *msg )
 
 void NoFreeNode::handleFileRequest( FileRequest *msg )
 {
-    // Si ya estamos sirviendo a otro nodo salimos.
-    if(nodeServed != NOBODY){
+    // Si ya estamos sirviendo a otro nodo o somos freerider salimos.
+    if(nodeServed != NOBODY || isFreerider){
         cancelAndDelete(msg);
         return;
     }
@@ -296,10 +298,8 @@ void NoFreeNode::reputationRequest( )
     bool isNewNode   = (tempReputation.totalRequest == 0)? true : false;
     //miro si el ratio es meyor que el necesario
     bool isGoodRatio = (rate >= requiredShareRate)? true : false;
-    //probabilidad de que sea un free rider
-    bool isGoodNode  = (uniform(0,1)<kindness)? true: false;
     // Decide si el nodo al que servir es digno de ser servido.
-    if((isNewNode || isGoodRatio) && isGoodNode){
+    if(isNewNode || isGoodRatio){
         // Estos campos no son necesarios, pero podría implementarse un factory que lo hiciese por mi.
         File *fmsg = new File();
         fmsg->setSourceNodeId(getId());

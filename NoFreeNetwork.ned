@@ -36,7 +36,6 @@ simple NoFreeNode
 {
     parameters:
         double requiredShareRate                 = default(0.8);
-        double reputationTimeout        @unit(s) = default(0.01s);
         double reputationRequestTimeout @unit(s) = default(10s);
         double fileRequestTimeout       @unit(s) = default(0.5s);
         double downloadFileTimeout      @unit(s) = default(0.1s);

@@ -65,7 +65,6 @@ protected:
     int nodeServedGate;                 // Id de la puerta por la que servir el archivo.
     set <int> nodeContributed;          // Lista de nodos que han aportado su reputación.
     double downloadFileTimeout;         // Tiempo hasta que se realize peticion
-    double reputationTimeout;           // Tiempo de validez de la reputación.
     double reputationRequestTimeout;    // Tiempo que se esperan msg tipo R.
     double fileRequestTimeout;          // Tiempo que se espera a que se sirva
                                         // un archivo (después se considera al servidor un freerider)
@@ -77,6 +76,7 @@ protected:
                                         // Funciona con fileRequestTimeout.
     cMessage *downloadFileTimer;        // Timer para encolar nuevas peticiones de archivo.
     map <int, PeerReputation> nodeMap;  // Lista de nodos adyacentes y su reputación.
+    bool isFreerider;                   // Almacena si es freerider o no.
 
 
 public:
