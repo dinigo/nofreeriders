@@ -44,7 +44,7 @@ Define_Module(NoFreeNode);
 
 using namespace std;
 
-NoFreeNode::NoFreeNode() : NOBODY(-1){ }
+NoFreeNode::NoFreeNode() : NOBODY(-1) { }
 
 NoFreeNode::~NoFreeNode()
 {
@@ -72,7 +72,7 @@ void NoFreeNode::initialize()
     // Encolo la primera descarga dentro de un tiempo "downloadFileTimeout".
     downloadFileTimeout     = par("downloadFileTimeout");
     // Decide si es un freerider a partir de la "bondad" del nodo
-    isFreerider = (uniform(0,1)<kindness)? true : false;
+    isFreerider = (uniform(0,1)>kindness)? true : false;
 
     WATCH(nodeRequested);
     WATCH(nodeServed);
@@ -83,6 +83,10 @@ void NoFreeNode::initialize()
     WATCH(isFreerider);
 
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
+
+
+    if (isFreerider) getDisplayString().parse("i=old/comp_a");
+
     updateDisplay();
 }
 

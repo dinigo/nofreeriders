@@ -35,12 +35,12 @@ package nofreeriders;
 simple NoFreeNode
 {
     parameters:
-        double requiredShareRate                 = default(0.8);
+        double requiredShareRate = default(0.8);
         double reputationRequestTimeout @unit(s) = default(10s);
-        double fileRequestTimeout       @unit(s) = default(0.5s);
-        double downloadFileTimeout      @unit(s) = default(0.1s);
-        double kindness                          = default(uniform(0.5,0.9));
-        @display("i=old/bwcomp;is=n");
+        double fileRequestTimeout @unit(s) = default(0.5s);
+        double downloadFileTimeout @unit(s) = default(0.1s);
+        double kindness = default(uniform(0.5,0.9));
+        @display("i=old/comp;is=n");
     gates:
         inout dataGate[];     // Para FileRequest y File
 }
