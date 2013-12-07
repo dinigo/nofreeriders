@@ -81,6 +81,7 @@ void NoFreeNode::initialize()
     WATCH(tempReputation);
     WATCH_SET(nodeContributed);
     WATCH_MAP(nodeMap);
+    WATCH(kindness);
 
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
     updateDisplay();
