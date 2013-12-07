@@ -26,7 +26,7 @@
 
 //
 // file: NoFreeNode.h
-// author: Daniel I帽igo
+// author: Daniel I駃go, Efr閚 Su醨ez
 //
 
 #ifndef __NOFREENODE_H_
@@ -61,8 +61,8 @@ protected:
     int nodeRequested;                 // Nodo al que se ha pedido el archivo.
     int nodeServed;                    // Nodo al que se va a enviar el archivo.
     int nodeServedGate;                // Id de la puerta por la que servir el archivo.
-    set <int> nodeContributed;    // Lista de nodos que han aportado su reputaci贸n.
-    double downloadFileTimeout;        // Tiempo hasta que se realize petici贸n
+    set <int> nodeContributed;          // Lista de nodos que han aportado su reputaci贸n.
+    double downloadFileTimeout;        // Tiempo hasta que se realize peticion
     double reputationTimeout;          // Tiempo de validez de la reputaci贸n.
     double reputationRequestTimeout;   // Tiempo que se esperan msg tipo R.
     double fileRequestTimeout;         // Tiempo que se espera a que se sirva
@@ -99,7 +99,7 @@ public:
     virtual void initialize ();
 
     /**
-     * Recibe un mensaje, mira del tipo que es (RR, FR, R o selfmessage) y
+     * Recibe un mensaje, mira del tipo que es (RR, FR, R o timer) y
      * delega su procesado a la funci贸n correspondiente.
      */
     virtual void handleMessage ( cMessage *msg  );
@@ -112,7 +112,7 @@ public:
 
     /**
      * Recibe una petici贸n para servir un archivo que desencadena el proceso
-     * de decisi贸n. Habr谩 que mirar si se tiene la reputaci贸n del nodo
+     * de decision. Habr谩 que mirar si se tiene la reputaci贸n del nodo
      *
      *      trabajar con mapas en c++:
      *      http://www.yolinux.com/TUTORIALS/CppStlMultiMap.html
@@ -151,12 +151,6 @@ public:
      * directamente y buscando pero luego se usar谩 un algoritmo de flooding.
      */
     virtual void reputationRequest ( );
-
-    /**
-     * Reenv铆a un mensaje por todas las gate menos por la que lleg贸, cambiando
-     * el destinatario para cada una de ellas.
-     */
-    virtual void forwardMulticast ( NoFreeMessage *msg );
 
     /**
      * Graba estad铆sticas y logs.

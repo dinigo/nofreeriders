@@ -26,7 +26,7 @@
 
 //
 // file: NoFreeNode.cc
-// author: Daniel Iñigo
+// author: Daniel I�igo, Efr�n Su�rez
 //
 
 #include <stdio.h>
@@ -188,27 +188,27 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
         cancelAndDelete(msg);
         return;
     }
+    //dentro de ahora mas el timer de reputation me mando el sms de repitationRequestTimer
     else scheduleAt(simTime()+reputationRequestTimeout, reputationRequestTimer);
     // Borra la lista de nodos de los que se ha recibido reputación.
     nodeContributed.clear();
-    // Mira a quién estamos sirviendo.
+    // Mira a quien queremos servir.
     nodeServed = msg->getSourceNodeId();
-    nodeServedGate = msg->getArrivalGate()->getId();
-    ev << "HFR: [" << nodeServed << "]-->[" << getIndex() << "]" << endl;
-    // Si ya tenemos almacenada reputación de este nodo la usamos.
+    nodeServedGate = msg->getArrivalGate()->getIndex();
+    ev << "HandleFileReq: [" << nodeServed << "]-->[" << getId() << "]" << endl;
+    // Si ya tenemos almacenada reputacion de este nodo la usamos.
     if(nodeMap.find(nodeServed) != nodeMap.end()){
         tempReputation = nodeMap[nodeServed];
     }
-    // Si no se borra la que se tenía, que sería de otro nodo.
+    // Si no, se borra la tempReputation que se tenia, ya que seria de uan vez anterior.
     else{
-        tempReputation.totalRequest    = 0;
-        tempReputation.acceptedRequest = 0;
+        tempReputation=PeerReputation();
     }
     // Crea un mensaje ReputationRequest para el nodo que pide.
     ReputationRequest *rrmsg = new ReputationRequest("ReputationRequest");
-    rrmsg->setSourceNodeId(getId());
-    rrmsg->setTargetNodeId(nodeServed);
-    // Reenvía copias del ReputationReques a todos menos a quien
+    rrmsg->setSourceNodeId(getId());    //asigna el origen
+    rrmsg->setTargetNodeId(nodeServed); //asigna el objetivo que buscamos
+    // Reenvia copias del ReputationRequest a todos menos a quien
     for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
             int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
@@ -216,12 +216,13 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
             send(rrmsg->dup(),"dataGate$o", i);
         }
     }
+    cancelAndDelete(msg);
 }
 
 void NoFreeNode::handleFileResponse( File *msg )
 {
-    // Si aún no ha vencido el temporizador avisa de que ha recibido para que
-    // no le quiten la reputación.
+    // Para caundo me responden con el archivo, si aun no ha vencido el temporizador avisa de que ha recibido para que
+    // no le quiten la reputacion.
     if(nodeRequested != -1){
         nodeRequested = -1;
     }
@@ -233,12 +234,8 @@ void NoFreeNode::handleFileResponse( File *msg )
 void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 {
     int targetNode = msg->getTargetNodeId();
-    // Si somos nosotros mismos no contestamos.
-    if(targetNode == getId()){
-        cancelAndDelete(msg);
-        return;
-    }
-    // Si ya tenemos reputación de este nodo la enviamos.
+
+    // Si tenemos reputacion de este nodo la enviamos.
     if(nodeMap.find(targetNode) != nodeMap.end()){
         // Crea un mensaje.
         Reputation *rmsg = new Reputation("Reputation");
@@ -247,15 +244,18 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
         rmsg->setDestinationNodeId(msg->getSourceNodeId());
         rmsg->setTotalRequests(nodeMap[targetNode].totalRequest);
         rmsg->setAcceptedRequests(nodeMap[targetNode].acceptedRequest);
-        // La reenvía por la puerta que llegó.
+        // La reenvia por la puerta que llegó.
         send(rmsg,"dataGate$o", msg->getArrivalGate()->getIndex());
     }
     // Y la pedimos por todas las bocas menos por la que llegó:
     for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
             int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
-            msg->setDestinationNodeId(destinationNodeId);
-            send(msg->dup(),"dataGate$o", i);
+            //si el objetivo es el mismo que el destino no le envio la peticion de reputacion
+            if(targetNode != destinationNodeId){
+                msg->setDestinationNodeId(destinationNodeId);
+                send(msg->dup(),"dataGate$o", i);
+            }
         }
     }
     // Borra el mensaje original.
@@ -274,11 +274,11 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
             int a = msg->getAcceptedRequests();
             int t = msg->getTotalRequests();
             tempReputation = PeerReputation(a, t);
-            // Añado el nodo a la lista de los que han contribuido para no coger más.
+            // A�ado el nodo a la lista de los que han contribuido para no coger mas.
             nodeContributed.insert(msg->getSourceNodeId());
         }
     }
-    // Si no era para mi lo reenvío por todas las salidas menos la que llegó.
+    // Si no era para mi lo reenvío por todas las salidas menos la que llega.
     else{
         for(int i=0; i<gateSize("dataGate$o"); i++){
             if(msg->getArrivalGate()->getIndex() != i){
@@ -295,10 +295,14 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
 
 void NoFreeNode::reputationRequest( )
 {
+    //calcular el ratio
     double rate = (double)tempReputation.acceptedRequest / (double)tempReputation.totalRequest;
+    //si las peticiones totales dentro de la reputacion temporal que tengo es 0 es que es un nuevo
     bool isNewNode   = (tempReputation.totalRequest == 0)? true : false;
+    //miro si el ratio es meyor que el necesario
     bool isGoodRatio = (rate >= requiredShareRate)? true : false;
-    bool isGoodNode  = (uniform(0,1)>kindness)? true: false;
+    //probabilidad de que sea un free rider
+    bool isGoodNode  = (uniform(0,1)<kindness)? true: false;
     // Decide si el nodo al que servir es digno de ser servido.
     if((isNewNode || isGoodRatio) && isGoodNode){
         // Estos campos no son necesarios, pero podría implementarse un factory que lo hiciese por mi.
@@ -309,23 +313,6 @@ void NoFreeNode::reputationRequest( )
     }
     // Ya se ha decidido si se sirve o no y el nodo queda libre para servir a otra persona.
     nodeServed = -1;
-    updateDisplay();
-}
-
-void NoFreeNode::forwardMulticast( NoFreeMessage *msg )
-{
-    // Para cada puerta de salida
-    for(int i=0; i<gateSize("dataGate$o"); i++){
-        // Si no es por la que llegó
-        if(msg->getArrivalGate()->getIndex() != i){
-            // se cambia el destinatario y se envía un DUPLICADO.
-            int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
-            msg->setDestinationNodeId(destinationNodeId);
-            send(msg->dup(),"dataGate$o", i);
-        }
-    }
-    // Borra el mensaje original.
-    cancelAndDelete(msg);
     updateDisplay();
 }
 
