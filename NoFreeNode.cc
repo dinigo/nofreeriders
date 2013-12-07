@@ -142,13 +142,16 @@ void NoFreeNode::handleMessage( cMessage *msg )
     // Si es un automensaje vemos qué timer ha saltado
     if(msg->isSelfMessage()){
         handleTimerEvent(msg);
-        return;
+        return; // No es buena práctica poenr aquí return, pero la alternativa es peor.
     }
     // Se hace cast al tipo de mensaje que heredan todos los demás
     NoFreeMessage *auxmsg = check_and_cast<NoFreeMessage *>(msg);
     // Se checkea el TTL para ver si ha hecho demasiados saltos ya.
     int ttl = auxmsg->getTtl();
-    if(ttl<0) cancelAndDelete(msg);
+    if(ttl==0){
+        cancelAndDelete(msg);
+        return;
+    }
     else auxmsg->setTtl(ttl-1);
     // Según su tipo se hace casting al tipo adecuado y se pasa a la función.
     switch(auxmsg->getMessageTipe()){
@@ -180,8 +183,11 @@ void NoFreeNode::handleMessage( cMessage *msg )
 
 void NoFreeNode::handleFileRequest( FileRequest *msg )
 {
-    // Si ya estamos sirviendo a otro nodo salimos, que aún no sabemos encolar eventos.
-    if(nodeServed != -1) return;
+    // Si ya estamos sirviendo a otro nodo salimos.
+    if(nodeServed != -1){
+        cancelAndDelete(msg);
+        return;
+    }
     else scheduleAt(simTime()+reputationRequestTimeout, reputationRequestTimer);
     // Borra la lista de nodos de los que se ha recibido reputación.
     nodeContributed.clear();
@@ -201,8 +207,6 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     // Crea un mensaje ReputationRequest para el nodo que pide.
     ReputationRequest *rrmsg = new ReputationRequest("ReputationRequest");
     rrmsg->setSourceNodeId(getId());
-    int destinationNodeId = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getId();
-    rrmsg->setDestinationNodeId(destinationNodeId);
     rrmsg->setTargetNodeId(nodeServed);
     // Reenvía copias del ReputationReques a todos menos a quien
     for(int i=0; i<gateSize("dataGate$o"); i++){
@@ -212,9 +216,6 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
             send(rrmsg->dup(),"dataGate$o", i);
         }
     }
-    // Borra el mensaje.
-    cancelAndDelete(msg);
-    updateDisplay();
 }
 
 void NoFreeNode::handleFileResponse( File *msg )
@@ -233,7 +234,10 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 {
     int targetNode = msg->getTargetNodeId();
     // Si somos nosotros mismos no contestamos.
-    if(targetNode == getId()) return;
+    if(targetNode == getId()){
+        cancelAndDelete(msg);
+        return;
+    }
     // Si ya tenemos reputación de este nodo la enviamos.
     if(nodeMap.find(targetNode) != nodeMap.end()){
         // Crea un mensaje.
@@ -244,26 +248,32 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
         rmsg->setTotalRequests(nodeMap[targetNode].totalRequest);
         rmsg->setAcceptedRequests(nodeMap[targetNode].acceptedRequest);
         // La reenvía por la puerta que llegó.
-        send(rmsg,"dataGate$o", msg->getArrivalGate()->getId());
+        send(rmsg,"dataGate$o", msg->getArrivalGate()->getIndex());
     }
-    // Y la pedimos por todas las bocas menos por la que llegó.
+    // Y la pedimos por todas las bocas menos por la que llegó:
     for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
+            int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
+            msg->setDestinationNodeId(destinationNodeId);
             send(msg->dup(),"dataGate$o", i);
         }
     }
-    // Borro el mensaje original, que para eso se enviaron duplicados.
+    // Borra el mensaje original.
     cancelAndDelete(msg);
+    updateDisplay();
 }
 
 void NoFreeNode::handleReputationResponse( Reputation *msg )
 {
+    ev << "targetNode:" << msg->getTargetNodeId() << "   servedNode:" << nodeServed << "   destinationNoe:" << msg->getDestinationNodeId() << "   myNode:" << getId() << endl;
     // Si el mensaje de reputación es del nodo que he preguntado, y me lo mandaban a mi.
     if((msg->getTargetNodeId() == nodeServed) && (msg->getDestinationNodeId() == getId())){
-        // Si aún no tengo almacenada la opinión de ese nodo me la quedo.
+        // Si aún no tengo sumada la opinión de ese nodo me la quedo.
         if(nodeContributed.find(nodeServed) != nodeContributed.end()){
-            tempReputation.totalRequest += msg->getTotalRequests();
-            tempReputation.acceptedRequest += msg->getAcceptedRequests();
+            ev << "suma la opinión del nodo [" << nodeServed << "] a la que ya tengo " << tempReputation;
+            int a = msg->getAcceptedRequests();
+            int t = msg->getTotalRequests();
+            tempReputation = PeerReputation(a, t);
             // Añado el nodo a la lista de los que han contribuido para no coger más.
             nodeContributed.insert(msg->getSourceNodeId());
         }
@@ -272,6 +282,8 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     else{
         for(int i=0; i<gateSize("dataGate$o"); i++){
             if(msg->getArrivalGate()->getIndex() != i){
+                int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
+                msg->setDestinationNodeId(destinationNodeId);
                 send(msg->dup(),"dataGate$o", i);
             }
         }
@@ -297,6 +309,23 @@ void NoFreeNode::reputationRequest( )
     }
     // Ya se ha decidido si se sirve o no y el nodo queda libre para servir a otra persona.
     nodeServed = -1;
+    updateDisplay();
+}
+
+void NoFreeNode::forwardMulticast( NoFreeMessage *msg )
+{
+    // Para cada puerta de salida
+    for(int i=0; i<gateSize("dataGate$o"); i++){
+        // Si no es por la que llegó
+        if(msg->getArrivalGate()->getIndex() != i){
+            // se cambia el destinatario y se envía un DUPLICADO.
+            int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
+            msg->setDestinationNodeId(destinationNodeId);
+            send(msg->dup(),"dataGate$o", i);
+        }
+    }
+    // Borra el mensaje original.
+    cancelAndDelete(msg);
     updateDisplay();
 }
 
