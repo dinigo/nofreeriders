@@ -90,7 +90,7 @@ void NoFreeNode::fileRequest()
     int n = gateSize("dataGate$o");
     int k = intuniform(0,n-1);
     // Construyo un paquete.
-    FileRequest *frmsg = new FileRequest("fileRequest");
+    FileRequest *frmsg = new FileRequest();
     // Recupero la ID del módulo conectado por esa puerta
     nodeRequested = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getId();
     frmsg->setSourceNodeId(getId());
@@ -199,7 +199,7 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
         tempReputation=PeerReputation();
     }
     // Crea un mensaje ReputationRequest para el nodo que pide.
-    ReputationRequest *rrmsg = new ReputationRequest("ReputationRequest");
+    ReputationRequest *rrmsg = new ReputationRequest();
     rrmsg->setSourceNodeId(getId());    //asigna el origen
     rrmsg->setTargetNodeId(nodeServed); //asigna el objetivo que buscamos
     // Reenvia copias del ReputationRequest a todos menos a quien
@@ -233,7 +233,7 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
     // Si tenemos reputacion de este nodo la enviamos.
     if(nodeMap.find(targetNode) != nodeMap.end()){
         // Crea un mensaje.
-        Reputation *rmsg = new Reputation("Reputation");
+        Reputation *rmsg = new Reputation();
         rmsg->setTargetNodeId(msg->getTargetNodeId());
         rmsg->setSourceNodeId(getId());
         rmsg->setDestinationNodeId(msg->getSourceNodeId());
@@ -301,7 +301,7 @@ void NoFreeNode::reputationRequest( )
     // Decide si el nodo al que servir es digno de ser servido.
     if((isNewNode || isGoodRatio) && isGoodNode){
         // Estos campos no son necesarios, pero podría implementarse un factory que lo hiciese por mi.
-        File *fmsg = new File("File");
+        File *fmsg = new File();
         fmsg->setSourceNodeId(getId());
         fmsg->setDestinationNodeId(nodeServed);
         send(fmsg,"dataGate$o", nodeServedGate);
