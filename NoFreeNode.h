@@ -26,7 +26,7 @@
 
 //
 // file: NoFreeNode.h
-// author: Daniel I駃go, Efr閚 Su醨ez
+// author: Daniel I帽igo, Efr茅n Su谩rez
 //
 
 #ifndef __NOFREENODE_H_
@@ -55,26 +55,28 @@ struct PeerReputation {
 class NoFreeNode : public cSimpleModule
 {
 protected:
+    const int NOBODY;                   // Cuando no atendemos a un nodo ponemos este valor
+                                        // en los nodeRequested y nodeServed.
     PeerReputation tempReputation;      // Almacena temporalmente la reputaci贸n
                                         // de un nodo para decidir si servirle o no.
-    double requiredShareRate;          // Ratio necesario de reputaci贸n para compartir (p.ej: 0.8);
-    int nodeRequested;                 // Nodo al que se ha pedido el archivo.
-    int nodeServed;                    // Nodo al que se va a enviar el archivo.
-    int nodeServedGate;                // Id de la puerta por la que servir el archivo.
+    double requiredShareRate;           // Ratio necesario de reputaci贸n para compartir (p.ej: 0.8);
+    int nodeRequested;                  // Nodo al que se ha pedido el archivo.
+    int nodeServed;                     // Nodo al que se va a enviar el archivo.
+    int nodeServedGate;                 // Id de la puerta por la que servir el archivo.
     set <int> nodeContributed;          // Lista de nodos que han aportado su reputaci贸n.
-    double downloadFileTimeout;        // Tiempo hasta que se realize peticion
-    double reputationTimeout;          // Tiempo de validez de la reputaci贸n.
-    double reputationRequestTimeout;   // Tiempo que se esperan msg tipo R.
-    double fileRequestTimeout;         // Tiempo que se espera a que se sirva
+    double downloadFileTimeout;         // Tiempo hasta que se realize peticion
+    double reputationTimeout;           // Tiempo de validez de la reputaci贸n.
+    double reputationRequestTimeout;    // Tiempo que se esperan msg tipo R.
+    double fileRequestTimeout;          // Tiempo que se espera a que se sirva
                                         // un archivo (despu茅s se considera al servidor un freerider)
-    double kindness;                   // Probabilidad de enviar el archivo
+    double kindness;                    // Probabilidad de enviar el archivo
                                         // <0.8 freerider, >0.8 buen peer.
     cMessage *reputationRequestTimer;   // Timer para esperar mensajes de reputaci贸n.
                                         // Funciona con reputationRequestTimeout.
     cMessage *fileRequestTimer;         // Timer para esperar a que me sirvan un archivo.
                                         // Funciona con fileRequestTimeout.
     cMessage *downloadFileTimer;        // Timer para encolar nuevas peticiones de archivo.
-    map <int, PeerReputation> nodeMap;// Lista de nodos adyacentes y su reputaci贸n.
+    map <int, PeerReputation> nodeMap;  // Lista de nodos adyacentes y su reputaci贸n.
 
 
 public:

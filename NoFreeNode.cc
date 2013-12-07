@@ -26,7 +26,7 @@
 
 //
 // file: NoFreeNode.cc
-// author: Daniel I駃go, Efr閚 Su醨ez
+// author: Daniel I锟絠go, Efr锟絥 Su锟絩ez
 //
 
 #include <stdio.h>
@@ -44,10 +44,7 @@ Define_Module(NoFreeNode);
 
 using namespace std;
 
-NoFreeNode::NoFreeNode()
-{
-    // No necesita nada de momento.
-}
+NoFreeNode::NoFreeNode() : NOBODY(-1){ }
 
 NoFreeNode::~NoFreeNode()
 {
@@ -58,11 +55,11 @@ NoFreeNode::~NoFreeNode()
 
 void NoFreeNode::initialize()
 {
-
+    const int NOBODY = -1;
     requiredShareRate       = par("requiredShareRate");
     // Indicadores de archivo pedido a este nodo y siendo servido por 茅l.
-    nodeRequested = -1;
-    nodeServed    = -1;
+    nodeRequested = NOBODY;
+    nodeServed    = NOBODY;
     // Lee los valores de las variables desde el archivo de topolog铆a.
     reputationTimeout       = par("reputationTimeout");
     reputationRequestTimeout= par("reputationRequestTimeout");
@@ -103,13 +100,10 @@ void NoFreeNode::fileRequest()
     EV<<"Nodo["<<getIndex()<<"]:    FileRequest->Nodo["<<nodeRequested<<"]"<<endl;
     // Si no tengo reputaci贸n del nodo al que pido, la creo.
     if(nodeMap.find(nodeRequested) == nodeMap.end()){
-        nodeMap[nodeRequested].totalRequest    = 0;
-        nodeMap[nodeRequested].acceptedRequest = 0;
+        nodeMap[nodeRequested] = PeerReputation();
     }
-    // Considero que es un buen par y le subo la reputaci贸n para que no le
-    // perjudique si alguien me la pide mientras tanto.
+    // Considero que es un buen mal par de entrada y no le subo las peticiones aceptadas.
     nodeMap[nodeRequested].totalRequest++;
-    nodeMap[nodeRequested].acceptedRequest++;
     // Encolo un nuevo evento dentro de un tiempo aleatorio.
     downloadFileTimeout = par("downloadFileTimeout");
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
@@ -126,9 +120,8 @@ void NoFreeNode::handleTimerEvent( cMessage *msg )
     }
     // He pedido un archivo y no me lo han dado, pongo mala reputaci贸n.
     else if(msg == fileRequestTimer){
-        if(nodeRequested != -1){
-            nodeMap[nodeRequested].acceptedRequest--;
-            nodeRequested=-1;
+        if(nodeRequested != NOBODY){
+            nodeRequested=NOBODY;
         }
     }
     // Ha expirado el tiempo para recibir reputaci贸n, decidir si se env铆a o no.
@@ -185,7 +178,7 @@ void NoFreeNode::handleMessage( cMessage *msg )
 void NoFreeNode::handleFileRequest( FileRequest *msg )
 {
     // Si ya estamos sirviendo a otro nodo salimos.
-    if(nodeServed != -1){
+    if(nodeServed != NOBODY){
         cancelAndDelete(msg);
         return;
     }
@@ -222,10 +215,11 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
 
 void NoFreeNode::handleFileResponse( File *msg )
 {
-    // Para caundo me responden con el archivo, si aun no ha vencido el temporizador avisa de que ha recibido para que
-    // no le quiten la reputacion.
-    if(nodeRequested != -1){
-        nodeRequested = -1;
+    // Para caundo me responden con el archivo, si aun no ha vencido el
+    // temporizador avisa de que ha recibido y aumenta las peticiones aceptadas.
+    if(nodeRequested != NOBODY){
+        nodeMap[nodeRequested].acceptedRequest++;
+        nodeRequested = NOBODY;
     }
     // Borra el mensaje.
     cancelAndDelete(msg);
@@ -252,7 +246,7 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
     for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
             int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
-            //si el objetivo es el mismo que el destino no le envio la peticion de reputacion
+            // Si el objetivo es el mismo que el destino no le envio la petici贸n
             if(targetNode != destinationNodeId){
                 msg->setDestinationNodeId(destinationNodeId);
                 send(msg->dup(),"dataGate$o", i);
@@ -275,7 +269,7 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
             int a = msg->getAcceptedRequests();
             int t = msg->getTotalRequests();
             tempReputation = PeerReputation(a, t);
-            // A馻do el nodo a la lista de los que han contribuido para no coger mas.
+            // A锟絘do el nodo a la lista de los que han contribuido para no coger mas.
             nodeContributed.insert(msg->getSourceNodeId());
         }
     }
@@ -313,7 +307,7 @@ void NoFreeNode::reputationRequest( )
         send(fmsg,"dataGate$o", nodeServedGate);
     }
     // Ya se ha decidido si se sirve o no y el nodo queda libre para servir a otra persona.
-    nodeServed = -1;
+    nodeServed = NOBODY;
     updateDisplay();
 }
 
