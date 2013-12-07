@@ -53,27 +53,3 @@ channel DataChannel extends ned.DatarateChannel
     delay = 1ms;
     @display("ls=blue,2,s");
 }
-
-channel ControlChannel extends ned.DelayChannel
-{
-    delay = 1ms;
-    @display("ls=green,0,da");
-}
-
-
-// ------------------ NETWORKS ------------------//
-network MyNetwork
-{
-    parameters:
-        int numNodes = default(100);        // Numero de nodos tipo NoFreeNode
-        double connectivity = default(0.1); // probabilidad de conectar con otro
-        @display("i=block/network2");        
-
-    submodules:
-        noFreeNode[numNodes]: NoFreeNode;
-    connections:
-        // Itera sobre todas las parejas de nodos.
-        for i=1..numNodes-1, for j=0..i-1 {
-            noFreeNode[i].dataGate++ <--> DataChannel <--> noFreeNode[j].dataGate++ if uniform(0,1)<connectivity;
-        }
-}

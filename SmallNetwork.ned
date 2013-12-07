@@ -21,7 +21,7 @@ import nofreeriders.DataChannel;
 //
 // Generated network with random topology (10 nodes, 20 edges, seed=100).
 //
-network StaticNetwork {
+network SmallNetwork {
     submodules:
         node0 : NoFreeNode;
         node1 : NoFreeNode;
