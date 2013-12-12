@@ -39,7 +39,7 @@ simple NoFreeNode
         double reputationRequestTimeout @unit(s) = default(10s);
         double fileRequestTimeout @unit(s) = default(0.5s);
         double downloadFileTimeout @unit(s) = default(0.1s);
-        double kindness = default(uniform(0.5,0.9));
+        double freeriderRate = default(uniform(0.5,0.9));
         @display("i=old/comp;is=n");
     gates:
         inout dataGate[];     // Para FileRequest y File

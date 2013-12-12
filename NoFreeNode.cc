@@ -26,7 +26,7 @@
 
 //
 // file: NoFreeNode.cc
-// author: Daniel I�igo, Efr�n Su�rez
+// author: Daniel Iñigo, Efren Suarez
 //
 
 #include <stdio.h>
@@ -44,7 +44,7 @@ Define_Module(NoFreeNode);
 
 using namespace std;
 
-NoFreeNode::NoFreeNode() : NOBODY(-1) { }
+NoFreeNode::NoFreeNode() : NOBODY(-1) { }   //inicializa la cte nobody
 
 NoFreeNode::~NoFreeNode()
 {
@@ -64,7 +64,7 @@ void NoFreeNode::initialize()
     reputationRequestTimeout= par("reputationRequestTimeout");
     fileRequestTimeout      = par("fileRequestTimeout");
     downloadFileTimeout     = par("downloadFileTimeout");
-    kindness                = par("kindness");
+    freeriderRate                = par("freeriderRate");
     // Instancia los timer con un mensaje descriptivo.
     reputationRequestTimer  = new cMessage("reputationRequestTimer");
     fileRequestTimer        = new cMessage("fileRequestTimer");
@@ -72,22 +72,35 @@ void NoFreeNode::initialize()
     // Encolo la primera descarga dentro de un tiempo "downloadFileTimeout".
     downloadFileTimeout     = par("downloadFileTimeout");
     // Decide si es un freerider a partir de la "bondad" del nodo
-    isFreerider = (uniform(0,1)>kindness)? true : false;
+    isFreerider = (uniform(0,1)<freeriderRate)? true : false;
+
+    int countF  =0;                         //numero de archivos recibidos
+    int countR  =0;                         //numero de reputaciones recividas
+    int countRR =0;                         //peticion de reputacion
+    int countFR =0;                         //peticion de archivo
+
+    vectorF.setName("Archivos Recibidos");
+    vectorR.setName("Reputaciones Recibidas");
+    vectorRR.setName("Peticiones de Archivos");
+    vectorFR.setName("Peticiones de Reputaciones");
 
     WATCH(nodeRequested);
     WATCH(nodeServed);
     WATCH(tempReputation);
     WATCH_SET(nodeContributed);
     WATCH_MAP(nodeMap);
-    WATCH(kindness);
+    WATCH(freeriderRate);
     WATCH(isFreerider);
+
+    //WATCH para los contadores de mensajes
+    WATCH(countF);
+    WATCH(countR);
+    WATCH(countRR);
+    WATCH(countFR);
 
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
 
-
     if (isFreerider) getDisplayString().parse("i=old/comp_a");
-
-    updateDisplay();
 }
 
 void NoFreeNode::fileRequest()
@@ -108,12 +121,13 @@ void NoFreeNode::fileRequest()
     if(nodeMap.find(nodeRequested) == nodeMap.end()){
         nodeMap[nodeRequested] = PeerReputation();
     }
-    // Considero que es un buen mal par de entrada y no le subo las peticiones aceptadas.
-    nodeMap[nodeRequested].totalRequest++;
+    // Considero que es un mal par de entrada y no le subo las peticiones aceptadas.
+    nodeMap[nodeRequested].totalRequest++;      //aumento las peticiones totales del nodo al que he pedido
+
     // Encolo un nuevo evento dentro de un tiempo aleatorio.
     downloadFileTimeout = par("downloadFileTimeout");
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
-    updateDisplay();
+
 }
 
 void NoFreeNode::handleTimerEvent( cMessage *msg )
@@ -134,7 +148,7 @@ void NoFreeNode::handleTimerEvent( cMessage *msg )
     else if(msg == reputationRequestTimer){
         reputationRequest();
     }
-    updateDisplay();
+
 }
 
 void NoFreeNode::handleMessage( cMessage *msg )
@@ -183,6 +197,10 @@ void NoFreeNode::handleMessage( cMessage *msg )
 
 void NoFreeNode::handleFileRequest( FileRequest *msg )
 {
+    //registro de datos (total de peticiones de archivos recibidas)
+    countFR++;
+    vectorFR.record(countFR);
+
     // Si ya estamos sirviendo a otro nodo o somos freerider salimos.
     if(nodeServed != NOBODY || isFreerider){
         cancelAndDelete(msg);
@@ -225,16 +243,20 @@ void NoFreeNode::handleFileResponse( File *msg )
     // temporizador avisa de que ha recibido y aumenta las peticiones aceptadas.
     if(nodeRequested != NOBODY){
         nodeMap[nodeRequested].acceptedRequest++;
+
         nodeRequested = NOBODY;
     }
     // Borra el mensaje.
     cancelAndDelete(msg);
-    updateDisplay();
+
 }
 
 void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
 {
     int targetNode = msg->getTargetNodeId();
+
+    countRR++;
+    vectorRR.record(countRR);
 
     // Si tenemos reputacion de este nodo la enviamos.
     if(nodeMap.find(targetNode) != nodeMap.end()){
@@ -261,7 +283,7 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
     }
     // Borra el mensaje original.
     cancelAndDelete(msg);
-    updateDisplay();
+
 }
 
 void NoFreeNode::handleReputationResponse( Reputation *msg )
@@ -269,13 +291,17 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     ev << "targetNode:" << msg->getTargetNodeId() << "   servedNode:" << nodeServed << "   destinationNoe:" << msg->getDestinationNodeId() << "   myNode:" << getId() << endl;
     // Si el mensaje de reputación es del nodo que he preguntado, y me lo mandaban a mi.
     if((msg->getTargetNodeId() == nodeServed) && (msg->getDestinationNodeId() == getId())){
+
+        countR++;
+        vectorR.record(countR);
+
         // Si aún no tengo sumada la opinión de ese nodo me la quedo.
         if(nodeContributed.find(nodeServed) != nodeContributed.end()){
             ev << "suma la opinión del nodo [" << nodeServed << "] a la que ya tengo " << tempReputation;
             int a = msg->getAcceptedRequests();
             int t = msg->getTotalRequests();
             tempReputation = PeerReputation(a, t);
-            // A�ado el nodo a la lista de los que han contribuido para no coger mas.
+            // Añado el nodo a la lista de los que han contribuido para no coger mas.
             nodeContributed.insert(msg->getSourceNodeId());
         }
     }
@@ -291,7 +317,7 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     }
     // Borro el mensaje original, que para eso se enviaron duplicados.
     cancelAndDelete(msg);
-    updateDisplay();
+
 }
 
 void NoFreeNode::reputationRequest( )
@@ -309,36 +335,17 @@ void NoFreeNode::reputationRequest( )
         fmsg->setSourceNodeId(getId());
         fmsg->setDestinationNodeId(nodeServed);
         send(fmsg,"dataGate$o", nodeServedGate);
+
+        countF++;
+        vectorF.record(countF);
     }
     // Ya se ha decidido si se sirve o no y el nodo queda libre para servir a otra persona.
     nodeServed = NOBODY;
-    updateDisplay();
 }
 
 void NoFreeNode::finish( )
 {
     // TODO
-}
-
-void NoFreeNode::updateDisplay( )
-{
-    //ostringstream buffer;
-    //buffer << "nodeRequested: " << nodeRequested;
-    //getDisplayString().setTagArg("t", 0, buffer.srt().c_srt());
-    //buffer.
-    //stringComposer = "nodeServed: ";
-    //stringComposer += to_string(nodeServed);
-    //getDisplayString().setTagArg("t", 1, stringComposer.c_str());
-    //stringComposer = "tempReputation: TOTAL:";
-    //stringComposer += to_string(tempReputation.totalRequest);
-    //string)+ "  ACEPTADAS:"+ to_str(tempReputation.acceptedRequest);
-    //getDisplayString().setTagArg("t", 2, stringComposer.c_str());
-    //stringComposer = "";
-    //for (auto it=nodeMap.begin(); it!=nodeMap.end(); ++it){
-        //stringComposer += "Nodo[" + it->first + "]:{T:" + to_string(tempReputation.totalRequest)
-                //+ "  A:"+ to_str(tempReputation.acceptedRequest) + "}\n";
-    //}
-    //getDisplayString().setTagArg("tt", 0, stringComposer.c_str());
 }
 
 /**
