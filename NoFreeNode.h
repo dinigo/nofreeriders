@@ -68,7 +68,7 @@ protected:
     double reputationRequestTimeout;    // Tiempo que se esperan msg tipo R.
     double fileRequestTimeout;          // Tiempo que se espera a que se sirva
                                         // un archivo (después se considera al servidor un freerider)
-    double kindness;                    // Probabilidad de enviar el archivo
+    double freeriderRate;               // Probabilidad de enviar el archivo
                                         // <0.8 freerider, >0.8 buen peer.
     cMessage *reputationRequestTimer;   // Timer para esperar mensajes de reputación.
                                         // Funciona con reputationRequestTimeout.
@@ -77,6 +77,14 @@ protected:
     cMessage *downloadFileTimer;        // Timer para encolar nuevas peticiones de archivo.
     map <int, PeerReputation> nodeMap;  // Lista de nodos adyacentes y su reputación.
     bool isFreerider;                   // Almacena si es freerider o no.
+    //Contadores de paquetes
+    int countF;                         //numero de archivos recibidos
+    int countR;                         //numero de reputaciones recividas
+    int countRR;                        //peticion de reputacion
+    int countFR;                        //peticion de archivo
+
+    //defino los vectores que se utilizaran para loguear los datos
+    cOutVector vectorF, vectorR, vectorRR, vectorFR;
 
 
 public:
@@ -128,8 +136,8 @@ public:
     virtual void handleFileResponse ( File *msg );
 
     /**
-     * Recibe una petición de reputación para un nodo. Mira si lo tiene, si no
-     * lo tiene reenvía el mensaje (actualmente no se usa).
+     * Recibe una petición de reputación para un nodo. Mira si la tiene, si no
+     * lo tiene reenvía el mensaje.
      */
     virtual void handleReputationRequest ( ReputationRequest *msg );
 
@@ -158,12 +166,6 @@ public:
      * Graba estadísticas y logs.
      */
     virtual void finish ( );
-
-    /**
-     * Actualiza la informacíon que se muestra en cada nodo (porque los watch
-     * no funcionan sobre mapas. MUCHAS GRACIAS OMNET!!!
-     */
-    virtual void updateDisplay ( );
 };
 
 #endif
