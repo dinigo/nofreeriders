@@ -233,6 +233,7 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
             send(rrmsg->dup(),"dataGate$o", i);
         }
     }
+    cancelAndDelete(rrmsg);
     cancelAndDelete(msg);
 }
 
