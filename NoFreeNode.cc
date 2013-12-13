@@ -55,7 +55,7 @@ NoFreeNode::~NoFreeNode()
 
 void NoFreeNode::initialize()
 {
-    const int NOBODY = -1;
+    /////////// VARIABLES PARA LA CLASE ///////////
     // Indicadores de archivo pedido a este nodo y siendo servido por él.
     nodeRequested = NOBODY;
     nodeServed    = NOBODY;
@@ -71,19 +71,9 @@ void NoFreeNode::initialize()
     downloadFileTimer       = new cMessage("downloadFileTimer");
     // Encolo la primera descarga dentro de un tiempo "downloadFileTimeout".
     downloadFileTimeout     = par("downloadFileTimeout");
-    // Decide si es un freerider a partir de la "bondad" del nodo
+    // Decide si es un freerider a partir de la "bondad" del nodo.
     isFreerider = (uniform(0,1)<freeriderRate)? true : false;
-
-    int countF  =0;                         //numero de archivos recibidos
-    int countR  =0;                         //numero de reputaciones recividas
-    int countRR =0;                         //peticion de reputacion
-    int countFR =0;                         //peticion de archivo
-
-    vectorF.setName("Archivos Recibidos");
-    vectorR.setName("Reputaciones Recibidas");
-    vectorRR.setName("Peticiones de Archivos");
-    vectorFR.setName("Peticiones de Reputaciones");
-
+    // Watch de las variables de clase
     WATCH(nodeRequested);
     WATCH(nodeServed);
     WATCH(tempReputation);
@@ -92,15 +82,27 @@ void NoFreeNode::initialize()
     WATCH(freeriderRate);
     WATCH(isFreerider);
 
-    //WATCH para los contadores de mensajes
+    /////////// VARIABLES PARA LOS LOG ///////////
+    // Inicializa los contadores para los logs.
+    int countF  =0;
+    int countR  =0;
+    int countRR =0;
+    int countFR =0;
+    // Inicializa los vectores para los logs.
+    vectorF.setName("Archivos Recibidos");
+    vectorR.setName("Reputaciones Recibidas");
+    vectorRR.setName("Peticiones de Archivos");
+    vectorFR.setName("Peticiones de Reputaciones");
+    // WATCH para los contadores de mensajes.
     WATCH(countF);
     WATCH(countR);
     WATCH(countRR);
     WATCH(countFR);
 
-    scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
-
+    // Si el nodo es un freerider le pone un icono de MALO
     if (isFreerider) getDisplayString().parse("i=old/comp_a");
+    // Pone en cola el primer evento.
+    scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
 }
 
 void NoFreeNode::fileRequest()
@@ -110,7 +112,7 @@ void NoFreeNode::fileRequest()
     int k = intuniform(0,n-1);
     // Construyo un paquete.
     FileRequest *frmsg = new FileRequest();
-    // Recupero la ID del módulo conectado por esa puerta
+    // Recupero la ID del módulo conectado por esa puerta.
     nodeRequested = gate("dataGate$o", k)->getNextGate()->getOwnerModule()->getId();
     frmsg->setSourceNodeId(getId());
     frmsg->setDestinationNodeId(nodeRequested);
@@ -121,19 +123,17 @@ void NoFreeNode::fileRequest()
     if(nodeMap.find(nodeRequested) == nodeMap.end()){
         nodeMap[nodeRequested] = PeerReputation();
     }
-    // Considero que es un mal par de entrada y no le subo las peticiones aceptadas.
-    nodeMap[nodeRequested].totalRequest++;      //aumento las peticiones totales del nodo al que he pedido
-
+    // Aumento las peticiones totales del nodo al que he pedido.
+    nodeMap[nodeRequested].totalRequest++;      
     // Encolo un nuevo evento dentro de un tiempo aleatorio.
     downloadFileTimeout = par("downloadFileTimeout");
     scheduleAt(simTime()+downloadFileTimeout, downloadFileTimer);
-
 }
 
 void NoFreeNode::handleTimerEvent( cMessage *msg )
 {
     // Si no está conectado a ningún otro nodo no pedir archivos
-    if(gateSize("dataGate$o")==0) return;
+    if(gateSize("dataGate$o") == 0) return;
     // Es hora de descargarse un archivo de alguien.
     if(msg == downloadFileTimer){
         fileRequest();
@@ -141,24 +141,23 @@ void NoFreeNode::handleTimerEvent( cMessage *msg )
     // He pedido un archivo y no me lo han dado, pongo mala reputación.
     else if(msg == fileRequestTimer){
         if(nodeRequested != NOBODY){
-            nodeRequested=NOBODY;
+            nodeRequested = NOBODY;
         }
     }
     // Ha expirado el tiempo para recibir reputación, decidir si se envía o no.
     else if(msg == reputationRequestTimer){
         reputationRequest();
     }
-
 }
 
 void NoFreeNode::handleMessage( cMessage *msg )
 {
-    // Si es un automensaje vemos qué timer ha saltado
+    // Si es un automensaje vemos qué timer ha saltado.
     if(msg->isSelfMessage()){
         handleTimerEvent(msg);
         return; // No es buena práctica poenr aquí return, pero la alternativa es peor.
     }
-    // Se hace cast al tipo de mensaje que heredan todos los demás
+    // Se hace cast al tipo de mensaje que heredan todos los demás.
     NoFreeMessage *auxmsg = check_and_cast<NoFreeMessage *>(msg);
     // Se checkea el TTL para ver si ha hecho demasiados saltos ya.
     int ttl = auxmsg->getTtl();
@@ -197,7 +196,7 @@ void NoFreeNode::handleMessage( cMessage *msg )
 
 void NoFreeNode::handleFileRequest( FileRequest *msg )
 {
-    //registro de datos (total de peticiones de archivos recibidas)
+   // Registro de datos (total de peticiones de archivos recibidas).
     countFR++;
     vectorFR.record(countFR);
 
@@ -206,7 +205,7 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
         cancelAndDelete(msg);
         return;
     }
-    //dentro de ahora mas el timer de reputation me mando el sms de repitationRequestTimer
+    // Dentro de ahora mas el timer de reputation me mando el sms de repitationRequestTimer.
     else scheduleAt(simTime()+reputationRequestTimeout, reputationRequestTimer);
     // Borra la lista de nodos de los que se ha recibido reputación.
     nodeContributed.clear();
@@ -224,9 +223,9 @@ void NoFreeNode::handleFileRequest( FileRequest *msg )
     }
     // Crea un mensaje ReputationRequest para el nodo que pide.
     ReputationRequest *rrmsg = new ReputationRequest();
-    rrmsg->setSourceNodeId(getId());    //asigna el origen
-    rrmsg->setTargetNodeId(nodeServed); //asigna el objetivo que buscamos
-    // Reenvia copias del ReputationRequest a todos menos a quien
+    rrmsg->setSourceNodeId(getId());    // Asigna el origen
+    rrmsg->setTargetNodeId(nodeServed); // Asigna el objetivo que buscamos
+    // Reenvia copias del ReputationRequest a todos menos a quien.
     for(int i=0; i<gateSize("dataGate$o"); i++){
         if(msg->getArrivalGate()->getIndex() != i){
             int destinationNodeId = gate("dataGate$o", i)->getNextGate()->getOwnerModule()->getId();
@@ -243,12 +242,10 @@ void NoFreeNode::handleFileResponse( File *msg )
     // temporizador avisa de que ha recibido y aumenta las peticiones aceptadas.
     if(nodeRequested != NOBODY){
         nodeMap[nodeRequested].acceptedRequest++;
-
         nodeRequested = NOBODY;
     }
     // Borra el mensaje.
     cancelAndDelete(msg);
-
 }
 
 void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
@@ -283,12 +280,10 @@ void NoFreeNode::handleReputationRequest( ReputationRequest *msg )
     }
     // Borra el mensaje original.
     cancelAndDelete(msg);
-
 }
 
 void NoFreeNode::handleReputationResponse( Reputation *msg )
 {
-    ev << "targetNode:" << msg->getTargetNodeId() << "   servedNode:" << nodeServed << "   destinationNoe:" << msg->getDestinationNodeId() << "   myNode:" << getId() << endl;
     // Si el mensaje de reputación es del nodo que he preguntado, y me lo mandaban a mi.
     if((msg->getTargetNodeId() == nodeServed) && (msg->getDestinationNodeId() == getId())){
 
@@ -317,16 +312,15 @@ void NoFreeNode::handleReputationResponse( Reputation *msg )
     }
     // Borro el mensaje original, que para eso se enviaron duplicados.
     cancelAndDelete(msg);
-
 }
 
 void NoFreeNode::reputationRequest( )
 {
-    //calcular el ratio
+    // Calcular el ratio de compartición.
     double rate = (double)tempReputation.acceptedRequest / (double)tempReputation.totalRequest;
-    //si las peticiones totales dentro de la reputacion temporal que tengo es 0 es que es un nuevo
+    // Si las peticiones totales dentro de la reputacion temporal que tengo es 0 es que es un nuevo.
     bool isNewNode   = (tempReputation.totalRequest == 0)? true : false;
-    //miro si el ratio es meyor que el necesario
+    // Miro si el ratio es meyor que el necesario.
     bool isGoodRatio = (rate >= requiredShareRate)? true : false;
     // Decide si el nodo al que servir es digno de ser servido.
     if(isNewNode || isGoodRatio){
@@ -359,7 +353,6 @@ ostream& operator<<(ostream& os, const PeerReputation& p)
 
 /**
  * Operador entrada estandar para poder usar el WATCH_MAP() en modo r/w
- * Inspirador por: https://svn-itec.uni-klu.ac.at/trac2/dash/browser/trunk/omnet_simulation/omnet/test/anim/watch/watchtest.cc?rev=143
  */
 istream& operator>>(istream& is, PeerReputation& p)
 {
