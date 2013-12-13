@@ -6,3 +6,5 @@ nofreeriders
 .tkenvrc
 *.exe
 results/
+*.anf
+memoria/
